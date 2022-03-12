@@ -7,3 +7,5 @@ nombres <- c("RUBEN", "ANGEL I", "JOSUE",
 edades
 nombres
 
+
+
