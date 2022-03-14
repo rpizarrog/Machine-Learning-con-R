@@ -1,0 +1,32 @@
+---
+title: "prueba usando librerias"
+author: "Rubén Pizarro Gurrola"
+date: "12/3/2022"
+output: html_document
+---
+
+# Cargar librerías
+```{r}
+library(readr)
+library(dplyr)
+```
+
+# Cargar los datos
+
+```{r}
+url <- "https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/datos.limpios.csv"
+fifa <- read.csv(url)
+```
+
+
+# Mostrar los primeros 10 registros
+```{r}
+head(fifa, 10)
+```
+
+# filtro de MExico
+```{r}
+mexico <- filter(fifa, Nationality == "Mexico")
+mexico
+```
+

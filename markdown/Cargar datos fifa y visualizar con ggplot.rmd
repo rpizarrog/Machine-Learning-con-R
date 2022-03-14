@@ -1,0 +1,93 @@
+---
+title: "Cargar datos FIFA y visualziar con plot()"
+author: "Rubén Pizarro Gurrola"
+date: "12/3/2022"
+output: html_document
+---
+
+# Cargar librerías
+```{r message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(fdth)
+library(ggplot2)
+```
+
+# Cargar los datos
+
+```{r}
+url <- "https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/datos.limpios.csv"
+fifa <- read.csv(url)
+```
+
+
+# Mostrar los primeros 10 registros
+
+Variables de interés
+
+* Age
+* Estatura
+* PesoKgs
+* Nationality
+
+```{r}
+head(fifa[,c('Name', "Age", "Nationality", "Estatura", "PesoKgs")], 10)
+```
+
+# filtro de Mexico
+
+
+```{r}
+# mexico <- filter(fifa, Nationality == "Mexico")
+# mexico
+```
+
+# Visualiza con plot()
+
+
+## Dispersión de Estatura y PesoKgs
+
+```{r}
+# plot(x = fifa$Estatura, y = fifa$PesoKgs)
+ggplot(data = fifa) +
+  geom_point(aes(x = Estatura, y = PesoKgs), col='blue')
+```
+
+# Gráfica de barra de nacionalidad de jugadores
+
+```{r}
+tabla_nac <- fdt_cat(fifa$Nationality)
+tabla_nac
+```
+
+```{r}
+top.ten <- fifa %>%
+  group_by(Nationality) %>%
+  summarise(cuantos = n()) 
+
+top.ten <- head(arrange(top.ten, desc(cuantos)), 10)
+top.ten
+
+
+ggplot(top.ten, aes(x=Nationality, y=cuantos)) + 
+    geom_bar(stat = "identity")
+
+```
+
+# Histograma de edades
+
+Agrupando datos
+```{r}
+tabla.edades <- fdt(fifa$Age, 
+                    start = min(fifa$Age), 
+                    end = max(fifa$Age), 
+                    h = 5)
+tabla.edades
+```
+Se observa que hay una gran cantidad de futbolistas con una edad entre 21 y 26 que representa el 37.23% aproximadamente.
+
+```{r}
+ggplot(data = fifa) +
+  geom_histogram(aes(x = Age), bins = 30, col='gray')
+```
+
