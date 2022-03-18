@@ -116,6 +116,6 @@ cor(datos$height, datos$weight)
 
 Se observa que hay una fuerte asociación entre las variables height y weight dado que visualemente cuando aumenta una aumenta la otra.
 
-El valor de la covarianza es de 60 es es una estadístico que refleja la asocian con entre las variables.
+El valor de la covarianza es de 60 es es una estadístico que refleja la asocian con entre las variables y significa determinar la dirección de la relación lineal de las variables positivo y negativo [Brenda]. 
 
 El valor de correlación es por encima de 0.95 que se entiende de acuerdo a Henández Sampiere se establece que es una asociación fuerte entre las variables.
