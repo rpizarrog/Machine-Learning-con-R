@@ -1,0 +1,121 @@
+---
+title: "Explorar women y determinar covarianza y correlación"
+author: "Rubén Pizarro Gurrola"
+date: "18/3/2022"
+output: html_document
+---
+
+# Objetivo
+
+Determinar la covarianza y correlación del conjunto de datos women.
+
+# Descripción
+
+Se cargan los datos existentes de la función data() y específicamente los datos de women.
+
+Se exploran los datos y estadístico descriptivos
+
+Visualizar la dispersión de los datos con ggplot()
+
+Determinar covarianza y correlación
+
+Interpretación de los datos
+
+# Fundamento teórico
+
+### Covarianza
+
+La covarianza se establece como una medida descriptiva de la asociación entre dos variables x e y. (Cita Pendiente )\
+
+La covarianza sirve para sustentar una correlación lineal entre dos variables
+
+Fórmula de covarianza
+
+$$
+_{[1]}S_{xy} = \frac{\sum(x_i - \bar{x}) \cdot (y_i - \bar{y})}{n - 1}
+$$
+
+Correlación
+
+Fórmula de Correlación
+
+$$
+_{[2]}r = \frac{S_{xy}}{S_x \cdot S_y}
+$$
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+# library(plotly) # no se está usando
+library(knitr)
+library(PerformanceAnalytics) # Para coorelaciones gráficas
+```
+
+## Cargar funciones (sinónimo de librerías)
+
+```{r}
+source("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/funciones/mis%20funciones.R")
+```
+
+```{r}
+f.saludos("Rubén")
+```
+
+## Cargar datos
+
+```{r}
+datos <- as.data.frame(women)
+```
+
+## Explorar los datos
+
+```{r}
+summary(datos)
+str(datos)
+
+```
+
+## Mostrar los datos
+
+```{r}
+kable(datos, caption = "Los datos de women")
+
+```
+
+## Visualizar la dispersión de los datos
+
+```{r}
+ggplot(data = datos) +
+  geom_point(aes(x = height, y = weight), col='blue')
+
+```
+
+## Covarianza
+
+```{r}
+cov(datos$height, datos$weight)
+
+```
+
+## Correlación
+
+```{r}
+chart.Correlation(R = datos, histogram = TRUE)
+```
+
+
+```{r}
+cor(datos$height, datos$weight)
+
+```
+
+# Interpretación
+
+Se observa que hay una fuerte asociación entre las variables height y weight dado que visualemente cuando aumenta una aumenta la otra.
+
+El valor de la covarianza es de 60 es es una estadístico que refleja la asocian con entre las variables.
+
+El valor de correlación es por encima de 0.95 que se entiende de acuerdo a Henández Sampiere se establece que es una asociación fuerte entre las variables.
