@@ -1,0 +1,81 @@
+---
+title: "Modelo de RegresiOn Lineal Simple"
+author: "Rubén Pizarro Gurrola"
+date: "18/3/2022"
+output: html_document
+---
+
+# Objetivo 
+
+Crear y evaluar un modelo de regresión lineal simple para predecir el peso de uan persona.
+
+# Descripción 
+
+* Cargar librerías  y datos
+* Limpiar datos si es necesario
+* Explorar datos
+* Partir los datos en datos de entrenamiento y datos de validación 70$ y 30%
+* Crear modelo de regresión lineal simple con los daos de entrenamiento
+* Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
+* Predicciones
+* Evaluar predicciones con respecto a datos reles *rmse*
+* Interpretar el caso
+
+# Fundamento teórico
+
+La regresión lineal simple apoya a la correlación estimando coeficientes para hacer predicciones.
+
+$$
+Y = a + bx
+$$
+
+$$
+Y = \beta_0 + \beta_1\cdot x_i + \epsilon
+$$
+
+# Desarrollo 
+
+## Cargar librerías
+
+## Cargar datos
+
+## Explorar datos
+
+### Visualizar datos
+
+Diagrama de dispersión 
+
+### Las variables de interés
+* x la variable independiente o predicora
+* y la variable dependiente o resultado, es decir y depende de x.
+
+## Limpiar datos
+En caso necesario
+
+## Partir datos
+
+Aleatoriamente se repatel las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
+
+### Datos de entrenamiento
+
+Se hace aleatorio
+
+### Datos de validación
+
+## Construir el modelo
+
+El modelo se construye con datos de entrenamiento
+
+## Evaluar el modelo antes de predicciones
+
+## Hacer predicciones
+
+## Evaluar predicciones
+* rmse* Root Mean Stándar Error, este valor normalmente se compara cotra otro modelo y el que esté mas cerca de cero es mejor.
+
+## Predicciones con datos nuevos
+
+# Interpretración 
+
+# Bibliografía
+
