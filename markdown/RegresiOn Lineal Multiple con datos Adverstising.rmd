@@ -1,0 +1,207 @@
+---
+title: "Regresión Lineal Múltiple con datos Adverstising"
+author: "Rubén Pizarro Gurrola"
+date: "19/3/2022"
+output: html_document
+---
+
+# Objetivo 
+
+Crear y evaluar un modelo de regresión lineal simple para predecir el peso de uan persona.
+
+# Descripción 
+
+* Cargar librerías  y datos
+* Limpiar datos si es necesario
+* Explorar datos
+* Partir los datos en datos de entrenamiento y datos de validación 70$ y 30%
+* Crear modelo de regresión lineal simple con los daos de entrenamiento
+* Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
+* Predicciones
+* Evaluar predicciones con respecto a datos reles *rmse*
+* Interpretar el caso
+
+# Fundamento teórico
+
+La regresión lineal simple apoya a la correlación estimando coeficientes para hacer predicciones.
+
+
+
+# Desarrollo 
+
+## Cargar librerías
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+# library(plotly) # no se está usando
+library(knitr)
+library(PerformanceAnalytics) # Para coorelaciones gráficas
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+library(PerformanceAnalytics) # Para
+```
+
+
+## Cargar datos
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/Advertising_Web.csv")
+```
+
+
+## Explorar datos
+```{r}
+str(datos)
+summary(datos)
+```
+
+
+### Limpiar datos
+
+Quitar las primeras columnas
+```{r}
+datos <- select(datos, TV, Radio, Newspaper, Web, Sales)
+
+```
+
+
+### Correlaciones lineal entre variables
+```{r}
+cor(datos)
+```
+
+```{r}
+chart.Correlation(datos)
+```
+
+
+### Las variables de interés
+* x's las variable independientes o predicoras son TV, Radio, Newspaper y Web
+* y la variable dependiente o resultado (Sales), es decir y depende de x's.
+
+## Limpiar datos
+En caso necesario. No se observan datos extraños .... porque son pocos.
+
+## Partir datos
+
+Aleatoriamente se repaten las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
+
+Sembrar una semilla con set.seed()
+
+```{r}
+set.seed(2022)
+```
+
+```{r}
+n <- nrow(datos)  # cantidad de observaciones
+```
+
+```{r}
+entrena <- createDataPartition(y = datos$Sales, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+### Datos de entrenamiento
+
+```{r}
+datos.entrenamiento
+```
+
+### Datos de validación
+
+```{r}
+datos.validacion
+```
+
+
+## Construir el modelo
+
+El modelo se construye con datos de entrenamiento
+
+Modelo de Regresión Múltiple o Multivarido
+
+$$
+Y <- \beta_0 + \beta_1 \cdot X_1 + \beta2\cdot X_2 +\beta\cdot X_3 +...+ \beta_n\cdot X_n
+$$
+
+```{r}
+modelo_rm <- lm(data = datos, formula = Sales ~ TV + Radio + Newspaper + Web)
+
+summary(modelo_rm)
+
+```
+
+
+## Evaluar el modelo antes de predicciones
+
+El valor de R Square ajustado en este modelo sobrepasa el 85% que significa que las variables independientes representan aproximadamente el 85% el valor de la variable dependiente (Sales).
+
+Ese valor, se compara contra un métrica inicial esperada que seguramente se define para hablar de que si esta conforme a lo esperado. Por ejemplo se esparaba que este valor estuviera por encima del 70% de tal forma que el modelo si cumple con esa expectativa.
+
+
+## Hacer predicciones
+```{r}
+predicciones <- predict(object = modelo_rm, newdata = datos.validacion)
+# predicciones
+```
+
+Construir un *data frame* para comparar
+
+```{r}
+comparaciones <- data.frame(datos.validacion, predicciones)
+comparaciones
+```
+
+## Evaluar predicciones
+
+*rmse* Root Mean Stándard Error (*Root-mean-square deviation*), este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (*rmse*) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+```{r}
+rmse <- rmse(actual = comparaciones$Sales, predicted = comparaciones$predicciones)
+rmse
+```
+
+
+## Graficar prediciones contra valores reales
+```{r}
+ggplot(data = comparaciones) +
+  geom_line(aes(x = 1:nrow(comparaciones), y = Sales), col='blue') +
+  geom_line(aes(x = 1:nrow(comparaciones), y = predicciones), col='yellow') +
+  ggtitle(label="Valores reales vs predichos Adverstising") 
+  
+  
+```
+
+
+## Predicciones con datos nuevos
+```{r}
+TV <- c(140, 160)
+Radio <- c(60, 40)
+Newspaper <- c(80, 90) 
+Web <- c(120, 145)
+  
+nuevos <- data.frame(TV, Radio, Newspaper, Web)  
+nuevos
+
+Y.predicciones <- predict(object = modelo_rm, newdata = nuevos)
+Y.predicciones
+```
+
+
+# Interpretración 
+
+# Bibliografía
