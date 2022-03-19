@@ -1,0 +1,248 @@
+---
+title: "Comparar Modelo Reg Simple Vs Polinómico"
+author: "Rubén Pizarro Gurrola"
+date: "19/3/2022"
+output: html_document
+---
+
+# Objetivo 
+
+Crear, evaluar y comparar un modelo de regresión lineal simple y un moldeo polinómico para predecir  ???
+
+# Descripción 
+
+* Cargar librerías  y datos
+* Limpiar datos si es necesario
+* Explorar datos
+* Partir los datos en datos de entrenamiento y datos de validación 70$ y 30%
+* Crear modelo de regresión lineal simple con los daos de entrenamiento
+* Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
+* Predicciones
+* Evaluar predicciones con respecto a datos reles *rmse*
+* Comparar modelos
+* Interpretar el caso
+
+# Fundamento teórico
+
+La regresión lineal simple apoya a la correlación estimando coeficientes para hacer predicciones.
+
+$$
+Y = a + bx
+$$
+
+$$
+Y = \beta_0 + \beta_1\cdot x_i + \epsilon
+$$
+
+
+$$
+Y = \beta0 + \beta_1\cdot x^2+\beta_2\cdot x^3 + ... \beta_n \cdot x^n
+$$
+
+
+
+# Desarrollo 
+
+## Cargar librerías
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+# library(plotly) # no se está usando
+library(knitr)
+library(PerformanceAnalytics) # Para coorelaciones gráficas
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+```
+
+
+## Cargar datos
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/Advertising.csv")
+```
+
+
+## Explorar datos
+```{r}
+str(datos)
+summary(datos)
+```
+
+
+### Visualizar datos
+
+Diagrama de dispersión 
+
+```{r message=FALSE, warning=FALSE}
+source("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/funciones/simular_women")
+
+f_dispersion(data.frame(datos$TV, datos$Sales))
+```
+
+
+### Las variables de interés
+* x la variable independiente o predictora TV
+* y la variable dependiente o resultado es Sales, es decir y depende de x.
+
+Seleccionar las columnas de interes
+```{r}
+datos <- select(datos, TV, Sales)
+```
+
+
+## Limpiar datos
+En caso necesario
+
+## Partir datos
+
+Aleatoriamente se repate las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
+
+Sembrar una semilla con set.seed()
+
+```{r}
+set.seed(2022)
+```
+
+```{r}
+n <- nrow(datos)  # cantidad de observaciones
+```
+
+```{r}
+entrena <- createDataPartition(y = datos$Sales, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+### Datos de entrenamiento
+
+```{r}
+datos.entrenamiento
+```
+
+### Datos de validación
+
+```{r}
+datos.validacion
+```
+
+
+
+## Construir los modelo
+
+El modelo se construye con datos de entrenamiento
+### Modelo de Regresión lineal simple
+```{r}
+modelo.rs <- lm(data = datos.entrenamiento, 
+                 formula = Sales ~ TV)
+summary(modelo.rs)
+```
+
+
+### Modelo de Regresión polinomial segunda potencia
+```{r}
+modelo.rpoly2 <- lm(data = datos.entrenamiento, 
+                 formula = Sales ~ poly(TV, degree = 2))
+summary(modelo.rpoly2)
+```
+
+
+### Modelo de Regresión polinomial quinta potencia
+```{r}
+modelo.rpoly5 <- lm(data = datos.entrenamiento, 
+                 formula = Sales ~ poly(TV, degree = 5))
+summary(modelo.rpoly5)
+```
+
+
+## Evaluar el modelo antes de predicciones
+
+En cuanto a a métrica R Square que significa la represntatividad estadística de la variable independiete sobre la variable dependiente (TV sobre Sales), el mejor modelo sería el polinómioc de segndo nivel dado que : 
+
+* Polinomial de segundo nivel: Multiple R-squared:  0.6256
+* Lineal simple: Multiple R-squared:  0.6299
+
+## Hacer predicciones
+
+### Modelo Reg. Lineal Simple
+
+Se usa la función *predcit*() para hacer predicciones con los datos de validación luego se compara con los datos reales.
+
+```{r}
+predicciones <- predict(modelo.rs, newdata = datos.validacion)
+predicciones
+```
+
+Construir un *data frame* para comparar
+
+```{r}
+comparaciones <- data.frame(datos.validacion, predicciones)
+comparaciones
+```
+
+
+### Evaluar predicciones
+*rmse* Root Mean Stándar Error, este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+```{r}
+rmse <- rmse(actual = comparaciones$TV, predicted = comparaciones$predicciones)
+rmse
+```
+
+### Modelo Reg. Polinomial de segundo nivel
+
+Se usa la función *predcit*() para hacer predicciones con los datos de validación luego se compara con los datos reales.
+
+```{r}
+predicciones <- predict(modelo.rpoly2, newdata = datos.validacion)
+predicciones
+```
+
+Construir un *data frame* para comparar
+
+```{r}
+comparaciones <- data.frame(datos.validacion, predicciones)
+comparaciones
+```
+
+
+### Evaluar predicciones
+*rmse* Root Mean Stándar Error, este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+```{r}
+rmse <- rmse(actual = comparaciones$TV, predicted = comparaciones$predicciones)
+rmse
+```
+
+### Dispersión con lineas de tendecias
+
+Unicamente se reflejan las tendencias lineal simple y polinómico de segundo nivel.
+```{r}
+ggplot(data = datos.entrenamiento) +
+  geom_point(aes(x = TV, y = Sales), col='blue') +
+  geom_line(aes(x = TV, y = modelo.rs$fitted.values), col='red') +
+  geom_line(aes(x = TV, y = modelo.rpoly2$fitted.values), col='green')
+
+```
+
+
+## Predicciones con datos nuevos
+
+# Interpretración 
+
+# Bibliografía
