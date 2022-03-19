@@ -5,31 +5,30 @@ date: "19/3/2022"
 output: html_document
 ---
 
-# Objetivo 
+# Objetivo
 
 Crear y evaluar un modelo de regresión lineal simple para predecir el peso de uan persona.
 
-# Descripción 
+# Descripción
 
-* Cargar librerías  y datos
-* Limpiar datos si es necesario
-* Explorar datos
-* Partir los datos en datos de entrenamiento y datos de validación 70$ y 30%
-* Crear modelo de regresión lineal simple con los daos de entrenamiento
-* Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
-* Predicciones
-* Evaluar predicciones con respecto a datos reles *rmse*
-* Interpretar el caso
+-   Cargar librerías y datos
+-   Limpiar datos si es necesario
+-   Explorar datos
+-   Partir los datos en datos de entrenamiento y datos de validación 70\$ y 30%
+-   Crear modelo de regresión lineal simple con los daos de entrenamiento
+-   Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
+-   Predicciones
+-   Evaluar predicciones con respecto a datos reles *rmse*
+-   Interpretar el caso
 
 # Fundamento teórico
 
 La regresión lineal simple apoya a la correlación estimando coeficientes para hacer predicciones.
 
-
-
-# Desarrollo 
+# Desarrollo
 
 ## Cargar librerías
+
 ```{r message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
@@ -41,30 +40,30 @@ library(Metrics) # Para determinar rmse
 library(PerformanceAnalytics) # Para
 ```
 
-
 ## Cargar datos
+
 ```{r}
 datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/Advertising_Web.csv")
 ```
 
-
 ## Explorar datos
+
 ```{r}
 str(datos)
 summary(datos)
 ```
 
-
 ### Limpiar datos
 
 Quitar las primeras columnas
+
 ```{r}
 datos <- select(datos, TV, Radio, Newspaper, Web, Sales)
 
 ```
 
-
 ### Correlaciones lineal entre variables
+
 ```{r}
 cor(datos)
 ```
@@ -73,12 +72,13 @@ cor(datos)
 chart.Correlation(datos)
 ```
 
-
 ### Las variables de interés
-* x's las variable independientes o predicoras son TV, Radio, Newspaper y Web
-* y la variable dependiente o resultado (Sales), es decir y depende de x's.
+
+-   x's las variable independientes o predicoras son TV, Radio, Newspaper y Web
+-   y la variable dependiente o resultado (Sales), es decir y depende de x's.
 
 ## Limpiar datos
+
 En caso necesario. No se observan datos extraños .... porque son pocos.
 
 ## Partir datos
@@ -117,7 +117,6 @@ datos.entrenamiento
 datos.validacion
 ```
 
-
 ## Construir el modelo
 
 El modelo se construye con datos de entrenamiento
@@ -135,15 +134,18 @@ summary(modelo_rm)
 
 ```
 
-
 ## Evaluar el modelo antes de predicciones
+
+Fómula Rsquare Ajustado
+
+[![Fórmula R Square ajusado](images/formula%20de%20R%20Square%20Ajustado.jpg "Fórmula R Square ajusado")](enlace ...)
 
 El valor de R Square ajustado en este modelo sobrepasa el 85% que significa que las variables independientes representan aproximadamente el 85% el valor de la variable dependiente (Sales).
 
 Ese valor, se compara contra un métrica inicial esperada que seguramente se define para hablar de que si esta conforme a lo esperado. Por ejemplo se esparaba que este valor estuviera por encima del 70% de tal forma que el modelo si cumple con esa expectativa.
 
-
 ## Hacer predicciones
+
 ```{r}
 predicciones <- predict(object = modelo_rm, newdata = datos.validacion)
 # predicciones
@@ -175,8 +177,8 @@ rmse <- rmse(actual = comparaciones$Sales, predicted = comparaciones$prediccione
 rmse
 ```
 
-
 ## Graficar prediciones contra valores reales
+
 ```{r}
 ggplot(data = comparaciones) +
   geom_line(aes(x = 1:nrow(comparaciones), y = Sales), col='blue') +
@@ -186,8 +188,8 @@ ggplot(data = comparaciones) +
   
 ```
 
-
 ## Predicciones con datos nuevos
+
 ```{r}
 TV <- c(140, 160)
 Radio <- c(60, 40)
@@ -201,7 +203,6 @@ Y.predicciones <- predict(object = modelo_rm, newdata = nuevos)
 Y.predicciones
 ```
 
-
-# Interpretración 
+# Interpretración
 
 # Bibliografía
