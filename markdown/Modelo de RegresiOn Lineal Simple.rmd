@@ -1,25 +1,25 @@
 ---
-title: "Modelo de RegresiOn Lineal Simple"
+title: "Regresión Lineal Simple con datos de women"
 author: "Rubén Pizarro Gurrola"
 date: "18/3/2022"
 output: html_document
 ---
 
-# Objetivo 
+# Objetivo
 
-Crear y evaluar un modelo de regresión lineal simple para predecir el peso de uan persona.
+Crear y evaluar un modelo de regresión lineal simple para predecir el peso de una persona con los datos women.
 
-# Descripción 
+# Descripción
 
-* Cargar librerías  y datos
-* Limpiar datos si es necesario
-* Explorar datos
-* Partir los datos en datos de entrenamiento y datos de validación 70$ y 30%
-* Crear modelo de regresión lineal simple con los daos de entrenamiento
-* Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
-* Predicciones
-* Evaluar predicciones con respecto a datos reles *rmse*
-* Interpretar el caso
+-   Cargar librerías y datos
+-   Limpiar datos si es necesario
+-   Explorar datos
+-   Partir los datos en datos de entrenamiento y datos de validación 70\$ y 30%
+-   Crear modelo de regresión lineal simple con los daos de entrenamiento
+-   Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
+-   Predicciones
+-   Evaluar predicciones con respecto a datos reles *rmse*
+-   Interpretar el caso
 
 # Fundamento teórico
 
@@ -33,49 +33,183 @@ $$
 Y = \beta_0 + \beta_1\cdot x_i + \epsilon
 $$
 
-# Desarrollo 
+# Desarrollo
 
 ## Cargar librerías
 
+```{r}
+library(ggplot2)
+# library(plotly) # no se está usando
+library(knitr)
+library(PerformanceAnalytics) # Para coorelaciones gráficas
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse 
+```
+
 ## Cargar datos
+
+```{r}
+datos <- as.data.frame(women)
+```
 
 ## Explorar datos
 
+```{r}
+str(datos)
+summary(datos)
+```
+
+### Los datos
+
+```{r}
+datos
+```
+
 ### Visualizar datos
 
-Diagrama de dispersión 
+Diagrama de dispersión
+
+```{r}
+ggplot(data = datos) +
+  geom_point(aes(x = height, y = weight), col='blue')
+```
 
 ### Las variables de interés
-* x la variable independiente o predicora
-* y la variable dependiente o resultado, es decir y depende de x.
+
+-   x la variable independiente o predictora sería el height.
+-   y la variable dependiente o resultado, es decir y depende de x, weight.
 
 ## Limpiar datos
-En caso necesario
+
+En caso necesario...
 
 ## Partir datos
 
-Aleatoriamente se repatel las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
+Aleatoriamente se reparten las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
+
+Sembrar una semilla con set.seed()
+
+```{r}
+set.seed(2022)
+```
+
+```{r}
+n <- nrow(datos)  # cantidad de observaciones
+```
+
+```{r}
+entrena <- createDataPartition(y = datos$weight, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
 
 ### Datos de entrenamiento
 
-Se hace aleatorio
+```{r}
+datos.entrenamiento
+```
 
 ### Datos de validación
+
+```{r}
+datos.validacion
+```
 
 ## Construir el modelo
 
 El modelo se construye con datos de entrenamiento
 
+```{r}
+modelo.simple <- lm(data = datos.entrenamiento, formula = weight ~ height)
+modelo.simple
+```
+
+```{r}
+a <- modelo.simple$coefficients[1] # abcisa
+b <- modelo.simple$coefficients[2] # pendiente de la linea
+a ; b 
+```
+
+## Mostrar la linea de tendencia
+
+```{r}
+ggplot(data = datos.entrenamiento) +
+  geom_point(aes(x = height, y = weight), col='blue') +
+  geom_line(aes(x = height, y = modelo.simple$fitted.values), col='red')
+```
+
+$$
+Y = -93.238 + 3.535 \cdot X_i
+$$
+
 ## Evaluar el modelo antes de predicciones
+
+```{r}
+summary(modelo.simple)
+```
+
+El valor de R Square de Multiple R-squared: 0.9908 significa que la variable *height* representa estadísticamente aproximadamente un 99% el valor de la variable *weight*.
+
+El estadístico de R el cuadrado de la correlación (Pearson) de las dos variables
 
 ## Hacer predicciones
 
+Se usa la función *predcit*() para hacer predicciones con los datos de validación luego se compara con los datos reales.
+
+```{r}
+predicciones <- predict(modelo.simple, newdata = datos.validacion)
+predicciones
+```
+
+Construir un *data frame* para comparar
+
+```{r}
+comparaciones <- data.frame(datos.validacion, predicciones)
+comparaciones
+```
+
 ## Evaluar predicciones
-* rmse* Root Mean Stándar Error, este valor normalmente se compara cotra otro modelo y el que esté mas cerca de cero es mejor.
+
+\*rmse\* Root Mean Stándar Error (*Root-mean-square deviation*), este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (*rmse*) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+```{r}
+rmse <- rmse(actual = comparaciones$weight, predicted = comparaciones$predicciones)
+rmse
+```
 
 ## Predicciones con datos nuevos
 
-# Interpretración 
+```{r}
+estatura <- c(64, 68)
+Y <- predict(object = modelo.simple, newdata = data.frame(height = estatura))
+Y
+
+```
+
+# Interpretación
+
+La representación visual mediante la dispersión de los datos de *height* y *weight* se observa que si hay una relación y asociación lineal entre ambas variables.
+
+El modelo se construye con datos de entrenamiento siendo un 70% de los datos originales los que constituyen estos datos de entrenamiento.
+
+Al construir el modelo de regresión lineal simple, se observa con las etiquetas **'\*\*\*'** que los valores de los coeficientes de intersección $\beta_0$ y la pendiente $\beta_1$ están en un nivel de confianza por encima del 99% además de que son estadísticamente significativos,
+
+El valor de *Multiple R-squared*: 0.9908 que significa que la variable independiente *height* representa aproximadamente el 99% e valor de la variable dependiente *weight* dado que la fórmula en el modelo de regresión lineal simple fué establecida como: *formula = weight \~ height* que significa que el peso depende de la estatura.
+
+Finalmente la métrica de *rmse* al hacer predicciones con los datos de validación se deberá comparar contra otro modelo similar para observar cual de los dos es menor de tal forma que el que más se acerque a cero tiene mejor ajuste en la predicción de los datos.
 
 # Bibliografía
-
