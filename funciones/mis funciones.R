@@ -39,3 +39,19 @@ f.convertir.dt <- function(x) {
 f.saludos <- function(nombre) {
   paste("hola", nombre)
 }
+
+# función que agrega una columna a Adverstising
+f_agregar_Web.Adverstising <- function(datos) {
+  library(dplyr)
+  n <- nrow(datos)
+  media <- datos$TV 
+  desv.std <- datos$TV
+  
+  Web <- rnorm(n = n, mean = media, sd = desv.std)
+  media.Web <- media(Web)
+  
+  Web <- ifelse(Web < 0, mean(Web), Web)
+  Web
+  
+  
+}
