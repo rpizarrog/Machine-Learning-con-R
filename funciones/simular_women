@@ -1,0 +1,32 @@
+library(dplyr) # Para filtrar   
+library(ggplot2) # Para visualizar
+
+f_simular_women <- function(n) {
+  semilla <- sample(x = 1:100, size = 1)
+  set.seed(semilla)
+  x <- rnorm(n = n, 
+             mean(women$height), 
+             sd = sd(women$height))
+  y <- rnorm(n = n, 
+             mean(women$weight), 
+             sd = sd(women$weight))
+  
+  datos <- data.frame(x, y)
+  datos
+}
+
+f_dispersion <- function(datos) {
+    x <- datos[,1]
+    y <- datos[,2]
+    
+    ggplot(data = datos) +
+      geom_point(aes(x = x, y = y), col='blue')
+    #modelo <- lm(data = datos, formula = y ~ x)
+    #resumen <- summary(modelo)
+    #resumen
+}
+
+# Manda llamar simular women y 
+# el rsultado como entrada de dispersión
+# f_simular_women(50) %>%
+#  f_dispersion()
