@@ -15,10 +15,10 @@ Crear y evaluar un modelo de regresión lineal simple para predecir el peso de u
 -   Limpiar datos si es necesario
 -   Explorar datos
 -   Partir los datos en datos de entrenamiento y datos de validación 70\$ y 30%
--   Crear modelo de regresión lineal simple con los daos de entrenamiento
+-   Crear modelo de regresión con los daos de entrenamiento
 -   Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
 -   Predicciones
--   Evaluar predicciones con respecto a datos reles *rmse*
+-   Evaluar predicciones con respecto a datos reales *rmse*
 -   Interpretar el caso
 
 # Fundamento teórico
