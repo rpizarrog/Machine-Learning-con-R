@@ -1,0 +1,219 @@
+---
+title: "Arbol de regresión con Adverstising"
+author: "Rubén Pizarro Gurrola"
+date: "19/3/2022"
+output: html_document
+bibliography: referencias.bib
+---
+
+# Objetivo
+
+Crear y evaluar un modelo de árbol de regresión para predecir Sales a partir de TV, Radio, News y Web
+
+# Descripción
+
+-   Cargar librerías y datos Advertising
+-   Limpiar datos si es necesario
+-   Explorar datos
+-   Partir los datos en datos de entrenamiento y datos de validación 70% y 30%
+-   Crear modelo de regresión con los daos de entrenamiento
+-   Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
+-   Predicciones
+-   Evaluar predicciones con respecto a datos reales *rmse*
+-   Comparar contra el modelo de regresión múltiple
+-   Interpretar el caso
+
+# Fundamento teórico
+
+Los árboles de clasificación y regresión son métodos que proporcionan modelos que satisfacen objetivos tanto predictivos como explicativos.
+
+Dos de los puntos fuertes de este método son, por un lado, la sencilla representación gráfica mediante árboles y, por otro, el formato compacto de las reglas de lenguaje natural.
+
+Se distinguen dos casos en que estas técnicas de modelado deben utilizarse: - Utilizar árboles de clasificación para explicar y predecir la pertenencia de los objetos (observaciones, individuos) a una clase, sobre la base de variables explicativas cuantitativas y cualitativas.
+
+Utilizar un árbol de regresión para crear un modelo explicativo y predictivo para una variable cuantitativa dependiente basada en variables explicativas independientes cuantitativas y cualitativas[@xlstatbyaddinsoft]
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+# library(plotly) # no se está usando
+library(knitr)
+library(PerformanceAnalytics) # Para coorelaciones gráficas
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+library(PerformanceAnalytics) # Para
+library(rpart)       # arboles
+library(rpart.plot)  # arboles visuales
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/Advertising_Web.csv")
+```
+
+## Explorar datos
+
+```{r}
+str(datos)
+summary(datos)
+```
+
+### Limpiar datos
+
+Quitar las primeras columnas
+
+```{r}
+datos <- select(datos, TV, Radio, Newspaper, Web, Sales)
+
+```
+
+### Correlaciones lineal entre variables
+
+```{r}
+cor(datos)
+```
+
+```{r}
+chart.Correlation(datos)
+```
+
+### Las variables de interés
+
+-   x's las variable independientes o predictoras son TV, Radio, Newspaper y Web
+-   y la variable dependiente o resultado (Sales), es decir y depende de x's.
+
+## Limpiar datos
+
+En caso necesario. No se observan datos extraños .... porque son pocos.
+
+## Partir datos
+
+Aleatoriamente se repaten las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
+
+Sembrar una semilla con set.seed()
+
+```{r}
+set.seed(2022)
+```
+
+```{r}
+n <- nrow(datos)  # cantidad de observaciones
+```
+
+```{r}
+entrena <- createDataPartition(y = datos$Sales, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+### Datos de entrenamiento
+
+```{r}
+datos.entrenamiento
+```
+
+### Datos de validación
+
+```{r}
+datos.validacion
+```
+
+## Construir el modelo
+
+El modelo se construye con datos de entrenamiento
+
+Arbol de Regresión con variables numéricas
+
+```{r}
+modelo_ar <- rpart(data = datos.entrenamiento, formula = Sales ~ TV + Radio + Newspaper + Web)
+summary(modelo_ar)
+
+```
+
+## Representar visualmente el arbol de regresión
+
+```{r}
+rpart.plot(modelo_ar)
+```
+
+## Evaluar el modelo antes de predicciones
+
+Fómula Rsquare Ajustado
+
+[![Fórmula R Square ajusado](images/formula%20de%20R%20Square%20Ajustado.jpg "Fórmula R Square ajusado")](enlace%20...)
+
+El valor de R Square ajustado en este modelo sobrepasa el 85% que significa que las variables independientes representan y/o explican aproximadamente el 85% el valor de la variable dependiente (Sales).
+
+Ese valor, se compara contra un métrica inicial esperada que seguramente se define para hablar de que si esta conforme a lo esperado. Por ejemplo se esperaba que este valor estuviera por encima del 70% de tal forma que el modelo si cumple con esa expectativa.
+
+## Hacer predicciones
+
+```{r}
+predicciones <- predict(object = modelo_ar, newdata = datos.validacion)
+# predicciones
+```
+
+Construir un *data frame* para comparar
+
+```{r}
+comparaciones <- data.frame(datos.validacion, predicciones)
+comparaciones
+```
+
+## Evaluar predicciones
+
+*rmse* Root Mean Stándard Error (*Root-mean-square deviation*), este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (*rmse*) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+```{r}
+rmse <- rmse(actual = comparaciones$Sales, predicted = comparaciones$predicciones)
+rmse
+```
+
+## Graficar prediciones contra valores reales
+
+```{r}
+ggplot(data = comparaciones) +
+  geom_line(aes(x = 1:nrow(comparaciones), y = Sales), col='blue') +
+  geom_line(aes(x = 1:nrow(comparaciones), y = predicciones), col='yellow') +
+  ggtitle(label="Valores reales vs predichos Adverstising", subtitle = "Arbol de Regresión") 
+  
+  
+```
+
+## Predicciones con datos nuevos
+
+```{r}
+TV <- c(140, 160)
+Radio <- c(60, 40)
+Newspaper <- c(80, 90) 
+Web <- c(120, 145)
+  
+nuevos <- data.frame(TV, Radio, Newspaper, Web)  
+nuevos
+
+Y.predicciones <- predict(object = modelo_ar, newdata = nuevos)
+Y.predicciones
+```
+
+# Interpretación
+
+# Bibliografía
