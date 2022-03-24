@@ -17,10 +17,10 @@ Crear y evaluar un modelo de árbol de regresión para predecir Sales a partir d
 -   Explorar datos
 -   Partir los datos en datos de entrenamiento y datos de validación 70% y 30%
 -   Crear modelo de regresión con los daos de entrenamiento
--   Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes
--   Predicciones
--   Evaluar predicciones con respecto a datos reales *rmse*
--   Comparar contra el modelo de regresión múltiple
+-   Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes. **No aplica**
+-   Predicciones con datos de validación
+-   Evaluar predicciones con respecto a *rmse*
+-   Comparar contra el modelo de regresión múltiple con la métrica *rmse* y observar cuál es más bajo
 -   Interpretar el caso
 
 # Fundamento teórico
@@ -139,21 +139,11 @@ summary(modelo_ar)
 
 ```
 
-## Representar visualmente el arbol de regresión
+## Representar visualmente el árbol de regresión
 
 ```{r}
 rpart.plot(modelo_ar)
 ```
-
-## Evaluar el modelo antes de predicciones
-
-Fómula Rsquare Ajustado
-
-[![Fórmula R Square ajusado](images/formula%20de%20R%20Square%20Ajustado.jpg "Fórmula R Square ajusado")](enlace%20...)
-
-El valor de R Square ajustado en este modelo sobrepasa el 85% que significa que las variables independientes representan y/o explican aproximadamente el 85% el valor de la variable dependiente (Sales).
-
-Ese valor, se compara contra un métrica inicial esperada que seguramente se define para hablar de que si esta conforme a lo esperado. Por ejemplo se esperaba que este valor estuviera por encima del 70% de tal forma que el modelo si cumple con esa expectativa.
 
 ## Hacer predicciones
 
