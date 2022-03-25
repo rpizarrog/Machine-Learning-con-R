@@ -20,18 +20,27 @@ Crear y evaluar un modelo de árbol de regresión para predecir Sales a partir d
 -   Evaluar modelo antes de predicciones con los estadísticos. R Square y Coeficientes. **No aplica**
 -   Predicciones con datos de validación
 -   Evaluar predicciones con respecto a *rmse*
--   Comparar contra el modelo de regresión múltiple con la métrica *rmse* y observar cuál es más bajo
+-   Comparar contra el modelo de regresión múltiple con la métrica *rmse* y observar cuál es más bajo.
+-   Evaluar que tanto valor estadístico existe de correlación lineal (*Pearson*) entre valores predichos y reales o viceversa.
 -   Interpretar el caso
 
 # Fundamento teórico
 
+Los algoritmos de aprendizaje basados en árbol se consideran uno de los mejores y más utilizados métodos de aprendizaje supervisado.
+
+Potencian modelos predictivos con alta precisión, estabilidad y facilidad de interpretación.
+
 Los árboles de clasificación y regresión son métodos que proporcionan modelos que satisfacen objetivos tanto predictivos como explicativos.
 
-Dos de los puntos fuertes de este método son, por un lado, la sencilla representación gráfica mediante árboles y, por otro, el formato compacto de las reglas de lenguaje natural.
+Algunas ventajas son su sencillez y la representación gráfica mediante árboles y, por otro, la definición de reglas de asociación entre variables que incluye expresiones de condición que permiten explicar las predicciones.
 
-Se distinguen dos casos en que estas técnicas de modelado deben utilizarse: - Utilizar árboles de clasificación para explicar y predecir la pertenencia de los objetos (observaciones, individuos) a una clase, sobre la base de variables explicativas cuantitativas y cualitativas.
+Se pueden usar para regresiones con variables dependientes que tienen valores numéricos continuos o para clasificaciones con variables categóricas.
 
-Utilizar un árbol de regresión para crear un modelo explicativo y predictivo para una variable cuantitativa dependiente basada en variables explicativas independientes cuantitativas y cualitativas[@xlstatbyaddinsoft]
+Utilizar un árbol de regresión para crear un modelo explicativo y predictivo para una variable cuantitativa dependiente basada en variables explicativas independientes cuantitativas y cualitativas [@xlstatbyaddinsoft]
+
+Un árbol de regresión consiste en hacer preguntas de tipo$¿x_k < c?$ para cada una de las covariables, de esta forma el espacio de las covariables es divido en hiper-rectángulos (con el resultado de las condicionales) de las observaciones que queden dentro de un hiper-rectángulo tendrán el mismo valor estimado $\hat{y}$ o $Y$ [@hernández2021].
+
+Por otra parte, bajo el paradigma divide y vencerás, usando árboles de regresión y decisión y correspondientes reglas, el árbol representa el modelo similar a un diagrama de flujo en el que los nodos de decisión, los nodos de hoja y las ramas definen una serie de decisiones que se pueden usar para generar predicciones. Siguiendo las reglas se encuentran predicciones en la hoja final. [@lantz2013].
 
 # Desarrollo
 
@@ -48,6 +57,8 @@ library(Metrics) # Para determinar rmse
 library(PerformanceAnalytics) # Para
 library(rpart)       # arboles
 library(rpart.plot)  # arboles visuales
+
+library(PerformanceAnalytics) # Para cor grafica
 ```
 
 ## Cargar datos
@@ -93,7 +104,7 @@ En caso necesario. No se observan datos extraños .... porque son pocos.
 
 ## Partir datos
 
-Aleatoriamente se repaten las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
+Aleatoriamente se reparten las observaciones con el 70% para datos de entrenamiento y el 30% para datos de validación.
 
 Sembrar una semilla con set.seed()
 
@@ -171,14 +182,31 @@ $$
 
 *RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
 
-Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el *rmse*, mejor podrá un modelo ajustar los datos.
+
+### Evaluando con rmse
+
+En el modelo de regresión múltiple <https://rpubs.com/rpizarro/879843> con los datos Adverstising se tuvo un valor de *rmse* de: 1.470771.
+
+Con este modelo de árbol de regresión, los mismos datos, mismas particiones se tuvo un valor de 1.455681 por lo que se puede interpretar que este modelo de regresión fué mejor con respecto a la métrica *rmse*.
 
 ```{r}
 rmse <- rmse(actual = comparaciones$Sales, predicted = comparaciones$predicciones)
 rmse
 ```
 
-## Graficar prediciones contra valores reales
+### Evaluando con la correlación 
+
+Se puede evaluar con la correlación lineal de los valores predichos contra los valores relaes o viceversa.
+
+```{r}
+chart.Correlation(R = comparaciones[, c('Sales', 'predicciones')], histogram = TRUE)
+
+```
+
+Se observa una **muy fuerte** correlación entre las predicciones contra los valores reales (Sales) y viceversa de 0.95.
+
+## Visualizar predicciones contra valores reales
 
 ```{r}
 ggplot(data = comparaciones) +
