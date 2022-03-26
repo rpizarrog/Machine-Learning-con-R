@@ -1,0 +1,43 @@
+---
+title: "Simular Arbol de regresión con dosis y efectividad"
+author: "Rubén Pizarro Gurrola"
+date: "25/3/2022"
+output: powerpoint_presentation
+---
+
+# Objetivo
+
+Crear un arbol de regresión con los datos y relacionarlo con el autor de referencia.
+
+# Las librerías
+```{r message=FALSE, warning=FALSE}
+library(rpart)       # crear arbol de regre...
+library(rpart.plot)  # graficar arbol
+library(ggplot2)
+```
+
+
+# Los datos
+Son datos de dosis médica que afectan a la efectividad de un paciente o de un sujeto.
+
+```{r}
+dosis <- c(7, 17, 30, 42, 50, 53, 62, 70, 75, 85, 90, 95)
+efectividad <- c(10, 6, 14, 85, 95, 90, 41, 38, 36, 25, 8, 2)
+datos <- data.frame(dosis, efectividad)
+```
+
+# Dispersión 
+```{r}
+ggplot(data = datos) + 
+  geom_point(aes(x = dosis, 
+                 y = efectividad), col='blue')
+```
+
+# Construir el arbol de regresión
+```{r}
+modelo <- rpart(data = datos, formula = efectividad ~ dosis)
+modelo
+```
+
+
+
