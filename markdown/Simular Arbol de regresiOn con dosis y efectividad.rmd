@@ -1,0 +1,91 @@
+---
+title: "Simular Arbol de regresión con dosis y efectividad"
+author: "Rubén Pizarro Gurrola"
+date: "25/3/2022"
+output: powerpoint_presentation
+bibliography: "../markdown/referencias.bib"
+---
+
+# Objetivo
+
+Crear un arbol de regresión con los datos y relacionarlo con el autor de referencia.
+
+[@sotaquirá2021]
+
+# Las librerías
+
+```{r message=FALSE, warning=FALSE}
+library(rpart)       # crear arbol de regre...
+library(rpart.plot)  # graficar arbol
+library(ggplot2)
+```
+
+# Los datos
+
+Son datos de dosis médica que afectan a la efectividad de un paciente o de un sujeto.
+
+```{r}
+dosis <- c(7, 17, 30, 42, 50, 53, 62, 70, 75, 85, 90, 95)
+efectividad <- c(10, 6, 14, 85, 95, 90, 41, 38, 36, 25, 8, 2)
+datos <- data.frame(dosis, efectividad)
+```
+
+# Dispersión
+
+```{r}
+ggplot(data = datos) + 
+  geom_point(aes(x = dosis, 
+                 y = efectividad), col='blue')
+```
+
+# Construir el arbol de regresión
+
+```{r}
+modelo <- rpart(data = datos, formula = efectividad ~ dosis)
+modelo
+summary(modelo)
+```
+
+# Reglas de asociación y/o condicionales del árbol
+
+```{r}
+rpart.rules(modelo, style = "tall")
+```
+
+# Arbol visual
+
+```{r}
+rpart.plot(modelo)
+```
+
+# Construir el árbol con ajustes
+
+```{r}
+ajustes <- rpart.control(minsplit = 3,
+    minbucket = round(3 / 3),
+    maxdepth = 3,
+    cp = 0)
+```
+
+# Significado
+
+-   minsplit: el número mínimo de observaciones que deben existir en un nodo para que se intente una división.
+
+-   minbucket: el número mínimo de observaciones en cualquier nodo terminal <leaf> . Si solo se especifica uno de minbucket o minsplit , el código establece minsplit en minbucket\*3 o minbucket en minsplit/3 , según corresponda.
+
+-   cp parámetro de complejidad. No se intentará ninguna división que no reduzca la falta de ajuste general en un factor de cp . Por ejemplo, con la división de anova , esto significa que el R-cuadrado total debe aumentar en cp en cada paso.[@runebook.dev2012]
+
+# Construir nuevamente el modelo
+
+```{r}
+modelo2 <- rpart(data = datos, formula = efectividad ~ dosis, control = ajustes)
+modelo2
+```
+
+# Arbol visual
+
+```{r}
+rpart.plot(modelo2)
+```
+
+# Bibliografía
