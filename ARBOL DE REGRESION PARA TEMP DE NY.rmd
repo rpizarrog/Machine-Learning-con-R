@@ -1,0 +1,96 @@
+---
+title: "ARBOL DE REGRESION PARA TEMP DE NY"
+author: "Rubén Pizarro Gurrola"
+date: "25/3/2022"
+output: word_document
+---
+
+# Objetivo 
+
+Predecir temperaturas de la Cd. de NY a ciertas condiciones utilizando un modelo de árbol de regresión.
+
+Las condiciones serían: 
+
+¿Cuál será la temperatura (PREDICCIION NUMÉRICA) en Cd New York (u otra) con estas condiciones: 
+* Ozono: 30
+* Radiación: 100
+* Viento: 15
+* Mes: 4
+* Dia: 20
+
+La temperatura es la variable objetivo dependiente
+Las otras variables Ozono, Radiación, Viento, mes y dia son variables independiente
+
+# Cargar librerías
+```{r message=FALSE, warning=FALSE}
+library(readr) # para leer datos csv
+library(dplyr)
+library(ggplot2)
+# library(plotly) # no se está usando
+library(knitr)
+library(PerformanceAnalytics) # Para coorelaciones gráficas
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+library(PerformanceAnalytics) # Para
+library(rpart)       # arboles
+library(rpart.plot)  # arboles visuales
+
+library(PerformanceAnalytics) # Para cor grafica
+```
+
+# Cargar datos
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/temperatura%20condiciones%20NY.csv")
+```
+
+# Estructura de los datos
+
+```{r}
+str(datos)
+summary(datos)
+```
+# Construir modelo 
+
+Se construye el modelo con todos los datos, se recomienda datos de entrenamiento y datos de validación aquí, en este ejemplo no se hace, por hacerlo más práctico.
+
+```{r}
+modelo <- rpart(data = datos, formula = Temperatura ~ Ozono + Radiacion + Vel.viento + Mes, Dia)
+```
+
+## Summary modelo
+```{r}
+summary(modelo)
+```
+# Visualizar el árbol
+
+```{r}
+rpart.plot(modelo)
+```
+
+
+# Predecir
+
+## Inicializar variables y construir el nuevo DF
+```{r}
+Ozono <- 30
+Radiacion <- 100
+Vel.viento <- 15
+Mes <- 4
+Dia <- 20
+
+nuevo.datos <- data.frame(Ozono, Radiacion, Vel.viento, Mes, Dia)
+
+```
+
+# Predecir
+
+La predicción es : 
+```{r}
+prediccion <- predict(object = modelo, newdata = nuevo.datos)
+
+
+```
+La temperatura para esos datos será de : `r prediccion` de acuerdo al algoritmo árbol de regresión.
+
+
+
