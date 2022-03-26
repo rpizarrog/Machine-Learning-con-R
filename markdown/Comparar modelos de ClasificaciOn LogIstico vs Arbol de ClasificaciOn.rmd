@@ -1,0 +1,308 @@
+---
+title: "Comparar modelos de Clasificación Logístico vs Arbol de Clasificación"
+author: "Rubén Pizarro Gurrola"
+date: "26/3/2022"
+output: word_document
+---
+
+# Objetivo
+
+Comparar y evaluar modelos de clasificación lógistico y árbol de clasificación con datos y variables de la felicidad de personas.
+
+# Descripción
+
+La comparación se utilizan métricas a partir de la matriz de confusión. Se necesita la construcción de ambos modelos.
+
+# Librerías
+
+```{r message=FALSE, warning=FALSE}
+library(readr) # Leer datos
+library(caret) # Partir datos y matriz de confusión
+library(ggplot2) # Para graficar
+library(dplyr) # filtros select mutate summarize, group_by
+library(knitr) # Tabular data.frames amigable no tan textual
+library(rpart)      # árbol
+library(rpart.plot) # vis árbol
+
+```
+
+# Datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/estado%20de%20felicidad%20variables.csv")
+```
+
+## Explorar datos
+
+```{r}
+str(datos)
+summary(datos)
+```
+
+## head()
+
+```{r}
+kable(head(datos, 10), caption = "Primeros 10")
+```
+
+## tail()
+
+```{r}
+kable(tail(datos, 10), caption = "Ultimos 10")
+```
+
+# Transformar/Limpiar datos
+
+Como parte de preparar los datos habrá que transformar la variabe estado: \* FELIZ = 1\
+\* NO FELIZ = 0
+
+```{r}
+datos <- datos %>%
+  mutate(estado.01 = if_else(estado == "FELIZ", 1, 0))
+
+```
+
+# Particionar los datos
+
+Partir los datos con una semilla de 2022 con el 70% para dtos de entrenamiento y el 30% para datos de validación.
+
+## Sembrar semilla
+
+```{r}
+set.seed(2022)
+```
+
+## Datos de entrenamiento
+
+```{r}
+n <- nrow(datos)
+
+entrena <- createDataPartition(y = datos$estado, p = 0.70, list = FALSE, times = 1)
+
+entrena
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+kable(datos.entrenamiento, caption = "Datos de entrenamiento")
+```
+
+## Datos de validación
+
+```{r}
+# Datos validación
+datos.validacion <- datos[-entrena, ] # Los aue no son de enrenamiento
+kable(datos.validacion, caption = "Datos de validación")
+```
+
+# Construir modelos
+
+Con los datos de entrenamiento \* modelo1 = Regresión Logística \* modelo2 = Arbol de Regresión
+
+## Modelos de Regresion Logística
+
+```{r}
+modelo1 <- glm(data = datos.entrenamiento, formula = estado.01 ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, family = "binomial")  # el . significa todas las variables
+
+summary(modelo1)
+```
+
+## Predicciones
+
+Con los datos de validación
+
+### Predicciones con el modelo logístico
+
+```{r}
+predicciones1 <- predict(object = modelo1,newdata = datos.validacion, se.fit = TRUE)
+predicciones1
+```
+
+### Las probabilidades
+
+```{r}
+# Mediante la función logit se transforman los a probabilidades.
+predicciones1_prob <- exp(predicciones1$fit) / (1 + exp(predicciones1$fit))
+
+```
+
+### Tabla a comprar 1
+
+Construir un data.frame de los datos de validación con las probabilidaes y el valor resultante 0 o 1 dependiendo de si es por encima del 50% la probabilidad
+
+```{r}
+tabla.comparar1 <- data.frame(datos.validacion, predicciones1_prob)
+
+tabla.comparar1 <- tabla.comparar1 %>%
+  mutate(estado.pred = if_else(predicciones1_prob < 0.50, 0, 1))
+kable(tabla.comparar1)
+```
+
+### Evaluar con una matriz de confusión
+
+Evaluar las métricas de:
+
+-   Eficiencia Exactitud: Accuracy.
+
+$$
+Accuracy = \frac{TP + TN}{TP + FP + FN + TN} = \frac{VP + FP}{n}
+$$
+
+-   Precisión : Precision.
+
+$$
+    Precision = \frac{TP}{VP + FP}
+$$
+
+### Generar la matriz de confusión
+
+Antes se factorizan las variables estado.01 y estado.pred
+
+```{r}
+tabla.comparar1$estado.01 = as.factor(tabla.comparar1$estado.01)
+tabla.comparar1$estado.pred = as.factor(tabla.comparar1$estado.pred)
+```
+
+Se utiliza confusionMatrix de la librería caret
+
+```{r}
+matriz1 <- confusionMatrix(tabla.comparar1$estado.01, tabla.comparar1$estado.pred)
+matriz1
+```
+
+## Arbol de clasificación
+
+### Ajustar prámatros para el árbol
+
+Ajustes para ramificaciones y tope del árbol
+
+```{r}
+ajustes <- rpart.control(minsplit = 2,
+    minbucket = round(3 / 2),
+    maxdepth = 4,
+    cp = 0)
+```
+
+### Crear el modelo de árbol de clasificación
+
+Crear el modelo de árbol de clasificación con la función rpart de la librería part.
+
+```{r}
+modelo2 <- rpart(data = datos.entrenamiento, formula = estado.01 ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, method = "class", control = ajustes)
+```
+
+## Visualizando el árbol
+
+Se visualiza el árbol con el modelo2 de árbol de clasificación.
+
+```{r}
+rpart.plot(modelo2)
+```
+
+## Predicciones con el árbol de clasificación
+
+```{r}
+predicciones2 <- predict(object = modelo2, newdata = datos.validacion)
+
+```
+
+### Tabla a comprar 2
+
+Construir un data.frame de los datos de validación con las predicciones
+
+```{r}
+tabla.comparar2 <- data.frame(datos.validacion, predicciones2)
+
+tabla.comparar2 <- tabla.comparar2 %>%
+  mutate(estado.pred = if_else( X1 < 0.50, 0, 1))
+kable(tabla.comparar2)
+
+
+kable(tabla.comparar2)
+```
+
+### Evaluar con una matriz de confusión
+
+Evaluar las métricas de:
+
+-   Eficiencia Exactitud: Accuracy.
+
+$$
+Accuracy = \frac{TP + TN}{TP + FP + FN + TN} = \frac{VP + FP}{n}
+$$
+
+-   Precisión : Precision.
+
+$$
+    Precision = \frac{TP}{VP + FP}
+$$
+
+### Generar la matriz de confusión
+
+Antes se factorizan las variables estado.01 y estado.pred
+
+```{r}
+tabla.comparar2$estado.01 = as.factor(tabla.comparar1$estado.01)
+tabla.comparar2$estado.pred = as.factor(tabla.comparar2$estado.pred)
+```
+
+Se utiliza *confusionMatrix* de la librería caret
+
+```{r}
+matriz2 <- confusionMatrix(tabla.comparar2$estado.01, tabla.comparar2$estado.pred)
+matriz2
+```
+
+## 
+
+## Evaluar las métricas
+
+```{r}
+kable(matriz1$table, caption = "Matriz de confusión del modelo de regresión logística")
+kable(matriz2$table, caption = "Matriz de confusión del modelo de árbol de clasificación")
+
+kable(matriz1$overall, caption = "Métricas del del modelo de regresión logística")
+kable(matriz2$overall, caption = "Métricas del modelo de árbol de clasificación")
+
+
+
+```
+
+Se puede observar que el modelo de árbol de clasificación le falló a 3 observaciones mientras que el modelo de regresión logística le falla en 4 ocasiones con respecto a los datos de validación.
+
+Se puede interpretar que en términos de accuracy (eficiencia o exactitud) el modelo de árbol de clasificación es más eficiente que el de regresión logística con estos datos.
+
+# Predicciones con datos nuevos
+
+¿Cual sería un dato nuevo?
+
+```{r}
+genero = 'FEMENINO'
+esto.civil = 'SOLTERO'
+edad = 52
+satisfaccion.laboral <- 40
+satisfaccion.profesional <- 60
+vida.familiar <- 40
+vida.social <- 60
+salud <- 'REGULAR'
+dinero <- 40
+
+datos.nuevos <- data.frame(genero, esto.civil, edad, satisfaccion.laboral, satisfaccion.profesional, vida.familiar, vida.social, salud, dinero)
+datos.nuevos
+
+
+```
+
+```{r}
+predicciones.nuevas <- predict(object = modelo2, newdata = datos.nuevos)
+predicciones.nuevas
+
+```
+
+```{r}
+paste("La PREDICCIÓN O CLASIFICACIÓN de esta persona con estas características es: ", ifelse(predicciones.nuevas[,2] == 0, "NO FELIZ", "FELIZ") )
+
+```
+
+# Interpretar el caso
+
+# Bibliografía
