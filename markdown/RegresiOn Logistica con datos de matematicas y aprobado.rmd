@@ -1,0 +1,201 @@
+---
+title: "Regresión Logística cpn datos de matematicas y aprobado"
+author: "Rubén Pizarro Gurrola"
+date: '2022-03-26'
+output: pdf_document
+---
+
+# Objetivo
+
+Realizar y evaluar predicciones con un modelo de clasificación Regresión Logística.
+
+# Descripción
+
+Se va a construir un modelo de regresión logística con dos variables, valor numérico de calificación de una asignatura de matemáticas entre 0 y 100 y un valor categórico de 0 y 1 que significa estado Aprobado o No aprobado.
+
+# Sustento teórico
+
+Pendiente
+
+El valor de AIC es una medida de calidad del modelo y tienen que ver con ajuste de los datos y las predicciones. Este valor es comparado contra si mismo es decir si se tiene establecido inicialmente o puede compararse contra otro modelo.
+
+Se usará la función logit para probabilidades.
+
+![](formula%20logit%20para%20reg%20logistica.jpg)
+
+# Cargar librerías
+
+```{r}
+library(ggplot2)
+library(caret) # Partir datos como matriz de confusión 
+```
+
+# Cargar o construir datos
+
+```{r}
+# Variable dependiente LOGICA 0 O 1
+estado <- as.factor(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1,
+                         0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1,
+                         0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
+                         0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                         1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+                         1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1,
+                         1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1,
+                         0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+                         0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0,
+                         0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0,
+                         0, 0, 0, 0, 1, 0, 0, 0, 1, 1))
+
+# Variable independiente
+matematicas <- c(41, 53, 54, 47, 57, 51, 42, 45, 54, 52, 51, 51, 71, 57, 50, 43,
+                 51, 60, 62, 57, 35, 75, 45, 57, 45, 46, 66, 57, 49, 49, 57, 64,
+                 63, 57, 50, 58, 75, 68, 44, 40, 41, 62, 57, 43, 48, 63, 39, 70,
+                 63, 59, 61, 38, 61, 49, 73, 44, 42, 39, 55, 52, 45, 61, 39, 41,
+                 50, 40, 60, 47, 59, 49, 46, 58, 71, 58, 46, 43, 54, 56, 46, 54,
+                 57, 54, 71, 48, 40, 64, 51, 39, 40, 61, 66, 49, 65, 52, 46, 61,
+                 72, 71, 40, 69, 64, 56, 49, 54, 53, 66, 67, 40, 46, 69, 40, 41,
+                 57, 58, 57, 37, 55, 62, 64, 40, 50, 46, 53, 52, 45, 56, 45, 54,
+                 56, 41, 54, 72, 56, 47, 49, 60, 54, 55, 33, 49, 43, 50, 52, 48,
+                 58, 43, 41, 43, 46, 44, 43, 61, 40, 49, 56, 61, 50, 51, 42, 67,
+                 53, 50, 51, 72, 48, 40, 53, 39, 63, 51, 45, 39, 42, 62, 44, 65,
+                 63, 54, 45, 60, 49, 48, 57, 55, 66, 64, 55, 42, 56, 53, 41, 42,
+                 53, 42, 60, 52, 38, 57, 58, 65)
+
+datos <- data.frame(estado, matematicas)
+head(datos, 10)
+```
+
+# Datos de entrenamiento
+
+No se parten los datos de entrenamiento ni datos de validación, se utilizarán todos los datos
+
+# Cuantas de cada clase
+
+```{r}
+table(datos$estado)
+```
+
+# Visualiza diagrama de caja
+
+El comportamiento que tiene la varibles estado con respecto a variable matemáticas
+
+```{r}
+ggplot(data = datos, aes(x = estado, y = matematicas, color = estado)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.1) +
+  theme_bw() +
+  theme(legend.position = "null")
+```
+
+# Construir el modelo de Regresión logística
+
+```{r}
+modelo.rlogis <- glm(data = datos, 
+              formula = estado  ~ matematicas, 
+              family = "binomial")
+
+modelo.rlogis <- glm(data = datos, 
+              formula =  estado ~ matematicas, 
+              family = "binomial")
+```
+
+# Summary del modelo
+
+```{r}
+summary(modelo.rlogis)
+```
+
+# Nuevos datos
+
+Datos con los cuales predecir
+
+```{r}
+nuevos <- c(59, 35, 38, 78, 80, 60)
+nuevos_datos <- data.frame(matematicas = nuevos)
+```
+
+# Predicciones con el modelo
+
+```{r}
+predicciones <- predict(object = modelo.rlogis, newdata = nuevos_datos, se.fit = TRUE)
+predicciones
+
+```
+
+# Convertir a valor probabilístico las predicciones
+
+Utilizar la fórmula o función logic
+
+```{r}
+# Mediante la función logit se transforman los a probabilidades.
+predicciones_prob <- exp(predicciones$fit) / (1 + exp(predicciones$fit))
+predicciones_prob
+
+```
+
+Construir un data.frame con los valore nuevos, las predicciones y los valores probabilísticos
+
+```{r}
+comparaciones <- data.frame(nuevos_datos , predicciones, predicciones_prob)
+comparaciones
+```
+
+# Gráfica de S Sigmoide
+
+```{r}
+ggplot(data = comparaciones) +
+  geom_line(aes(x = matematicas, y = predicciones_prob), col='red') +
+  labs(title = "Probabilida de estado con respecto a matemáticas", subtitle = "Estado puede ser aprobado o No aprobado")
+```
+
+# Coeficientes
+
+```{r}
+b0 <- modelo.rlogis$coefficients[1]
+b1 <- modelo.rlogis$coefficients[2]
+```
+
+# Predecir de manera manual
+
+```{r}
+nuevos <- c(50, 67, 80, 60)
+
+predicciones2 <- b0 + b1 * nuevos
+predicciones2
+
+
+```
+
+# Convertir a valores probabilísticos
+
+Determinar e
+
+```{r}
+e <- exp(1)
+
+```
+
+```{r}
+probs <- e^(b0 + b1 * nuevos) / (1 + e^(b0 + b1 * nuevos))
+probs
+```
+
+Integrar en un datase nuevo solo para graficar
+
+```{r}
+nuevos.datos.frame <- data.frame(nuevos, probs)
+nuevos.datos.frame
+```
+
+# Nuevas predicciones 
+
+```{r}
+ggplot() +
+  geom_line(data = comparaciones, aes(x = matematicas, y = predicciones_prob), col='red') +
+  geom_line(data = nuevos.datos.frame, aes(x = nuevos, y = probs), col='blue') + 
+  labs(title = "Probabilida de estado con respecto a matemáticas", subtitle = "Estado puede ser aprobado o No aprobado")
+```
+
+# Interpretación
+
+# Bibliografía
