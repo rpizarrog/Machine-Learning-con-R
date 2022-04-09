@@ -16,6 +16,10 @@ La comparación se utilizan métricas a partir de la matriz de confusión. Se ne
 # Librerías
 
 ```{r message=FALSE, warning=FALSE}
+#install.packages("readr")
+#install.packages("caret")
+#install.packages("rpart.plot")
+
 library(readr) # Leer datos
 library(caret) # Partir datos y matriz de confusión
 library(ggplot2) # Para graficar
