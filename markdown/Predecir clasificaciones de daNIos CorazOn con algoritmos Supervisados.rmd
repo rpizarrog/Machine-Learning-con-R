@@ -102,7 +102,11 @@ datos.validacion <- datos[-entrena, ]
 
 ### Regresión logística
 
+Pendiente
+
 ### Arbol de clasificación
+
+Pendiente
 
 ### Máquinas de Soporte Vectorial (SVM) lineal
 
@@ -114,9 +118,34 @@ datos.validacion <- datos[-entrena, ]
 
 Predicciones con datos de validación
 
-### Evaluar prediciones del modelo ...
+### Evaluar predicciones del modelo ...
 
 ### Predicciones con datos nuevos
+
+```{r}
+BMI <- 20
+Smoking <- 'Yes'
+AlcoholDrinking = 'Yes'
+Stroke <- 'No'
+PhysicalHealth <- 13
+MentalHealth = 22
+DiffWalking = 'Yes'
+Sex = 'Male'
+AgeCategory = '60-64'
+Race = 'Hispanic'
+Diabetic <- 'Yes'
+PhysicalActivity = "No"
+GenHealth = "Fair"
+SleepTime = 8
+Asthma = "No"
+KidneyDisease = "Yes"
+SkinCancer = 'No'
+
+persona <- data.frame(BMI,Smoking, AlcoholDrinking, Stroke, PhysicalHealth, MentalHealth, DiffWalking, Sex, AgeCategory, Race, Diabetic, PhysicalActivity, GenHealth, SleepTime, Asthma, KidneyDisease, SkinCancer)
+persona
+
+
+```
 
 # Interpretación
 
