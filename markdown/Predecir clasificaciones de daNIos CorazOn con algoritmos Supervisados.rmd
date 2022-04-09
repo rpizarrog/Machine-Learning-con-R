@@ -39,7 +39,7 @@ Los modelo se aceptan si tienen un valor de exactitud por encima del 70%..
 
 ## Cargar librerías
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(readr)
 library(dplyr)
 library(caret)
@@ -56,7 +56,9 @@ library(rpart)        # Arboles de clasificación
 Cargar datos de manera local.
 
 ```{r}
-datos <- read.csv("../datos/heart_2020_cleaned.csv")
+
+# datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/heart_2020_cleaned.csv")
+datos <- read.csv("../datos/heart_2020_cleaned.csv", encoding = "UTF-8", stringsAsFactors = TRUE)
 
 ```
 
