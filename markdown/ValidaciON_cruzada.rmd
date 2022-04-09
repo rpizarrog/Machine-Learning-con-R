@@ -78,11 +78,11 @@ Como se va a evaluar modelos de clasificación se identifica la variable clasifi
 
 ### Modificar variable clasificatoria
 
-Se define la variable dependiente *target_class* como una variable categórica de nombre TipoEstrella con valores de *Pulsar* y *NoPulsar*.
+Se define la variable dependiente *target_class* como una variable categórica de nombre Clase con valores de *Pulsar* y *NoPulsar*.
 
 ```{r}
-colnames(datos)[9] <- "TipoEstrella"
-datos$TipoEstrella <- factor(datos$TipoEstrella, levels = c("0", "1"), labels = c("NoPulsar", "Pulsar"))
+colnames(datos)[9] <- "Clase"
+datos$Clase <- factor(datos$Clase, levels = c("0", "1"), labels = c("No", "Si"))
 
 
 ```
@@ -95,6 +95,10 @@ Por definición se utiliza la siguiente fórmula para escalar datos numéricos:
 
 $$ 
 x.escalada = \frac{x-min(x)}{max(x)-min(x)}
+$$
+
+$$
+x_i.escala = \frac{x_i - \bar{x}}{\sigma}
 $$
 
 ```{r}
@@ -120,7 +124,7 @@ Se toma 70% para datos de entrenamiento y 30% para datos de validación. Se util
 
 ```{r}
 set.seed(2022) # Año actual 
-divide <- sample.split(datos$TipoEstrella, SplitRatio = 0.70)
+divide <- sample.split(datos$Clase, SplitRatio = 0.70)
 datos_entrenamiento <- subset(datos, divide == TRUE)
 
 kable(head(datos_entrenamiento, 20), caption="Datos de Entrenamiento primeros 20")
@@ -138,13 +142,13 @@ kable(head(datos_validacion, 20), caption="Datos de Validación primeros 20")
 
 Se observa por ejemplo que el registro 1 está en los datos de validación y no en los datos de entrenamiento y que los registros del 2 al 9 están en los datos de entrenamiento y no en los datos de validación.
 
-Con la función *table()* se obtienen la cantidad de observaciones que son del tipo Pulsar y No Pulsar de acuerdo a la variable TipoEtrella, tanto en los datos de entrenamiento como en los datos de validación.
+Con la función *table()* se obtienen la cantidad de observaciones que son del tipo Pulsar y No Pulsar de acuerdo a la variable Clase, tanto en los datos de entrenamiento como en los datos de validación.
 
 Se observa también la partición de los datos en 70% y 30% de manera respectiva para cada conjunto o partición de datos.
 
 ```{r}
-table(datos_entrenamiento$TipoEstrella)
-table(datos_validacion$TipoEstrella)
+table(datos_entrenamiento$Clase, dnn = "Entrenamiento")
+table(datos_validacion$Clase, dnn = "Validacion")
 
 ```
 
@@ -152,7 +156,7 @@ table(datos_validacion$TipoEstrella)
 
 Se va a evaluar los algoritmos de clasificación mediante la técnica de validación cruzada con los datos de entrenamiento.
 
-Se debe obtener una medida de eficiencia (*accuracy*) conforme matriz de confusión para concluir en cual modelo es mejor para clasificar el Tipo de Estrella como variable resultado.
+Se debe obtener una medida de Exactitud (*accuracy*) conforme matriz de confusión para concluir en cual modelo es mejor para clasificar el Tipo de Estrella como variable resultado.
 
 Participan varios algoritmos :
 
@@ -163,7 +167,7 @@ Participan varios algoritmos :
 -   Decision Tree
 -   Random Forests
 
-Se utilizan funciones previamente codificadas que devuelven o retornan el valor de la eficiencia ("Accuracy") para cada algoritmo.
+Se utilizan funciones previamente codificadas que devuelven o retornan el valor de la eficiencia y/o exactitud ("Accuracy") para cada algoritmo.
 
 Varios subconjuntos de los datos de entrenamiento usando la función *createFolds()* de la librería *caret*.
 
@@ -173,7 +177,7 @@ Estos números de registros de envían a las funciones correspondientes que devu
 
 ```{r}
 
-registros <- createFolds(y = datos_entrenamiento$TipoEstrella, k = 10)
+registros <- createFolds(y = datos_entrenamiento$Clase, k = 10)
 
 ```
 
@@ -239,28 +243,28 @@ Accu.RF <- f_RF(registros, datos_entrenamiento)
 paste("Accuracy = ", Accu.RF)
 ```
 
-## Eficiencia (Accuracy) de todos los algoritmos
+## Eficiencia Exactitud (Accuracy) de todos los algoritmos
 
 Se presenta una tabla de la eficiencia de cada algoritmo usando la técnica de validación cruzada, es decir antes de probar con datos de validación y determinar la eficiencia con estos datos, se determina anticipadamente cual algoritmo resulta más eficiente para estos datos.
 
 ```{r}
 algoritmos <- c("RL Regresión Logística", "KNN. Vecinos mas cercanos", "SVM Máquinas de Soporte Vectorial", "RB Redes Bayesianas", "AC Arboles de Clasificación", "RF Bosques Aleatorios")
 
-Acc <- data.frame(Algoritmos = algoritmos, Eficiencia = c(Accu.RL, Accu.KNN, Accu.SVM, Accu.NV, Accu.AC, Accu.RF))
+Acc <- data.frame(Algoritmos = algoritmos, Exactitud = c(Accu.RL, Accu.KNN, Accu.SVM, Accu.NV, Accu.AC, Accu.RF))
 
-kable(Acc, caption = "Eficiencia de cada algoritmo con estos datos Usando validación cruzada")
+kable(Acc, caption = "Exactitud y/o Eficiencia de cada algoritmo con estos datos Usando validación cruzada")
 
 ```
 
-Se observa que para estos datos el algoritmo de clasificación con mayor eficiencia sería en el regresín logística, seguido del algoritmo de random forest.
+Se observa que para estos datos el algoritmo de clasificación con mayor eficiencia sería en el regresión logística, seguido del algoritmo de random forest.
 
-Ahora hay que determinar la eficiencia con los datos de entrenamiento y datos de validación con el algoritmo de regresión logística y evaluar la similitud de la eficicnaia con la validación cruzada, es decir antes y después.
+Ahora hay que determinar la eficiencia con los datos de entrenamiento y datos de validación con el algoritmo de regresión logística y evaluar la similitud de la exactidu y/o eficiencia con la validación cruzada, es decir antes y después.
 
 ### Crear modelo de Regresión Logística
 
 ```{r}
 modelo <- glm(data = datos_entrenamiento, 
-              formula = TipoEstrella ~ ., family = binomial)
+              formula = Clase ~ ., family = binomial)
 summary(modelo)
 ```
 
@@ -275,13 +279,13 @@ predicciones <- predict(object = modelo, newdata = datos_validacion, type = 'res
 ### Crear tabla comparativa
 
 ```{r}
-tabla.comparar <- data.frame(real = datos_validacion$TipoEstrella, predicciones)
+tabla.comparar <- data.frame(real = datos_validacion$Clase, predicciones)
 
 tabla.comparar <- tabla.comparar %>%
   mutate(Pred = if_else(predicciones > 0.5, 1, 0))
 
 tabla.comparar <- tabla.comparar %>%
-  mutate(TipoEstrellaPred = if_else(Pred == 0, "NoPulsar", "Pulsar"))
+  mutate(ClasePred = if_else(Pred == 0, "No", "Si"))
 
 
 kable(head(tabla.comparar, 20), caption = "Primeros 20 registros de tabla comparativa")
@@ -295,11 +299,11 @@ Se factorizan los valores
 
 ```{r}
 tabla.comparar$real <- as.factor(tabla.comparar$real)
-tabla.comparar$TipoEstrellaPred <- as.factor(tabla.comparar$TipoEstrellaPred)
+tabla.comparar$ClasePred <- as.factor(tabla.comparar$ClasePred)
 ```
 
 ```{r}
-matriz <- confusionMatrix(tabla.comparar$real, tabla.comparar$TipoEstrellaPred)
+matriz <- confusionMatrix(tabla.comparar$real, tabla.comparar$ClasePred)
 
 
 matriz$overall[1]
@@ -318,6 +322,11 @@ Los datos de *Accuracy* eficiencia son similares con validación cruzada y con l
 
 Al probar este documento con una partición del 80% para datos de entrenamiento y 20% para datos de validación se generan los resultados siguientes mediante técnica de validación cruzada. Identificando el mejor algoritmo el de bosques aleatorios seguido de Regresión Lógística
 
-RL Regresión Logística 0.9796761 KNN. Vecinos mas cercanos 0.9780691 SVM Máquinas de Soporte Vectorial 0.9789076 RB Redes Bayesianas 0.9464307 AC Arboles de Clasificación 0.9781393 RF Bosques Aleatorios 0.9800251
+* RL Regresión Logística 0.9796761 
+* KNN. Vecinos mas cercanos 0.9780691 
+* SVM Máquinas de Soporte Vectorial 0.9789076 
+* RB Redes Bayesianas 0.9464307 
+* AC Arboles de Clasificación 0.9781393 
+* RF Bosques Aleatorios 0.9800251
 
 # Bibliografía
