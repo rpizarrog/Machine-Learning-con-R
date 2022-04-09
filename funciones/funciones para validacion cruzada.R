@@ -32,11 +32,11 @@ f_RegresionLogistica <- function(registros, datos_entrenamiento) {
   cvRegresionLogistica <- lapply(registros, function(x){
     entrenamiento.cruzada <- datos_entrenamiento[-x, ]
     validacion_cruzada <- datos_entrenamiento[x, ]
-    clasificador <- glm(TipoEstrella ~ ., family = binomial, data = entrenamiento.cruzada)
+    clasificador <- glm(Clase ~ ., family = binomial, data = entrenamiento.cruzada)
     y_pred <- predict(clasificador, type = 'response', newdata = validacion_cruzada)
     y_pred <- ifelse(y_pred > 0.5, 1, 0)
     y_pred <- factor(y_pred, levels = c("0", "1"), labels = c("NoPulsar", "Pulsar"))
-    cm <- table(validacion_cruzada$TipoEstrella, y_pred)
+    cm <- table(validacion_cruzada$Clase, y_pred)
     precision <- (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[2,2] +cm[1,2] + cm[2,1])
     return(precision)
   })
@@ -52,7 +52,7 @@ f.KNN <- function(registros, datos_entrenamiento) {
                   validacion_cruzada[, -9], 
                   cl = entrenamiento.cruzada[, 9], 
                   k = 10)
-    cm <- table(validacion_cruzada$TipoEstrella, y_pred)
+    cm <- table(validacion_cruzada$Clase, y_pred)
     precision <- (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[2,2] +cm[1,2] + cm[2,1])
     return(precision)
   })
@@ -66,12 +66,12 @@ f_SVM <- function(registros, datos_entrenamiento) {
   cvKernelSVM <- lapply(registros, function(x){
     entrenamiento.cruzada <- datos_entrenamiento[-x, ]
     validacion_cruzada <- datos_entrenamiento[x, ]
-    clasificador <- svm(TipoEstrella ~ .,
+    clasificador <- svm(Clase ~ .,
                         data = entrenamiento.cruzada, 
                         type = 'C-classification', 
                         kernel = 'radial')
     y_pred <- predict(clasificador, newdata = validacion_cruzada)
-    cm <- table(validacion_cruzada$TipoEstrella, y_pred)
+    cm <- table(validacion_cruzada$Clase, y_pred)
     precision <- (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[2,2] +cm[1,2] + cm[2,1])
     return(precision)
   })
@@ -84,9 +84,9 @@ f_NV <- function(registros, datos_entrenamiento) {
   cvNaiveBayes <- lapply(registros, function(x){
     entrenamiento.cruzada <- datos_entrenamiento[-x, ]
     validacion_cruzada <- datos_entrenamiento[x, ]
-    clasificador <- naiveBayes(TipoEstrella ~ ., data = entrenamiento.cruzada)
+    clasificador <- naiveBayes(Clase ~ ., data = entrenamiento.cruzada)
     y_pred <- predict(clasificador, newdata = validacion_cruzada)
-    cm <- table(validacion_cruzada$TipoEstrella, y_pred)
+    cm <- table(validacion_cruzada$Clase, y_pred)
     precision <- (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[2,2] +cm[1,2] + cm[2,1])
     return(precision)
   })
@@ -99,9 +99,9 @@ f_AC <- function(registros, datos_entrenamiento) {
   cvDecisionTree <- lapply(registros, function(x){
     entrenamiento.cruzada <- datos_entrenamiento[-x, ]
     validacion_cruzada <- datos_entrenamiento[x, ]
-    clasificador <- rpart(TipoEstrella ~ ., data = entrenamiento.cruzada)
+    clasificador <- rpart(Clase ~ ., data = entrenamiento.cruzada)
     y_pred <- predict(clasificador, newdata = validacion_cruzada, type = 'class')
-    cm <- table(validacion_cruzada$TipoEstrella, y_pred)
+    cm <- table(validacion_cruzada$Clase, y_pred)
     precision <- (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[2,2] +cm[1,2] + cm[2,1])
     return(precision)
   })
@@ -114,9 +114,9 @@ f_RF <- function(registros, datos_entrenamiento) {
   cvRandomForest <- lapply(registros, function(x){
     entrenamiento.cruzada <- datos_entrenamiento[-x, ]
     validacion_cruzada <- datos_entrenamiento[x, ]
-    clasificador <- randomForest(TipoEstrella ~ ., data = entrenamiento.cruzada, ntree = 250)
+    clasificador <- randomForest(Clase ~ ., data = entrenamiento.cruzada, ntree = 250)
     y_pred <- predict(clasificador, newdata = validacion_cruzada)
-    cm <- table(validacion_cruzada$TipoEstrella, y_pred)
+    cm <- table(validacion_cruzada$Clase, y_pred)
     precision <- (cm[1,1] + cm[2,2]) / (cm[1,1] + cm[2,2] +cm[1,2] + cm[2,1])
     return(precision)
   })
