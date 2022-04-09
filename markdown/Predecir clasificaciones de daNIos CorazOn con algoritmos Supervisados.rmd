@@ -1,0 +1,121 @@
+---
+title: "Predecir clasificaciones de daños Corazon con algoritmos Supervisados"
+author: "Rubén Pizarro Gurrola"
+date: "9/4/2022"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+bibliography: referencias.bib
+---
+
+# Objetivo
+
+Realizar predicciones con modelos basados en algoritmos de clasificación evaluando la exactitud de cada modelo.
+
+# Descripción
+
+Se cargan librerías y se descargan los datos: <https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/heart_2020_cleaned.csv>
+
+Se buscan datos de entrenamiento y validación al 80% y 20% cada uno.
+
+Se construyen los modelos de:
+
+-   Regresión Logística binaria
+
+-   Árbol de Clasificacón tipo class
+
+-   SVM Lineal
+
+-   SVM Polinomial
+
+-   SVM Radial
+
+Los modelo se aceptan si tienen un valor de exactitud por encima del 70%..
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r}
+library(readr)
+library(dplyr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(knitr)
+library(e1071)        # Vectores de Soporte SVM
+library(rpart)        # Arboles de clasificación
+
+```
+
+## Cargar datos
+
+Cargar datos de manera local.
+
+```{r}
+datos <- read.csv("../datos/heart_2020_cleaned.csv")
+
+```
+
+## Explorar datos
+
+```{r}
+str(datos)
+summary(datos)
+
+```
+
+## Limpiar datos
+
+Pendiente ....
+
+## Las variables de interés
+
+Todas las variables son de entrada o variables independientes
+
+La variable de interés como dependiente o variable de salida es la de daño al corazón (HeartDisease).
+
+## Datos de entrenamiento y validación
+
+80% y 20%
+
+```{r}
+set.seed(2022)
+entrena <- createDataPartition(y = datos$HeartDisease, 
+                               p = 0.8, 
+                               list = FALSE, 
+                               times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+## Modelos a construir
+
+### Regresión logística
+
+### Arbol de clasificación
+
+### Máquinas de Soporte Vectorial (SVM) lineal
+
+### Máquinas de Soporte Vectorial (SVM) Polinomial
+
+### Máquinas de Soporte Vectorial (SVM) Radial
+
+### Generar predicciones del modelo ...
+
+Predicciones con datos de validación
+
+### Evaluar prediciones del modelo ...
+
+### Predicciones con datos nuevos
+
+# Interpretación
+
+# Bibliografría
