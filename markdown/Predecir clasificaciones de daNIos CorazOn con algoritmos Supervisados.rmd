@@ -40,6 +40,7 @@ Los modelo se aceptan si tienen un valor de exactitud por encima del 70%..
 ## Cargar librerías
 
 ```{r}
+#paketes necesarios para el ejercicio
 #install.packages("readr")
 #install.packages("caret")
 #install.packages("rpart.plot")
