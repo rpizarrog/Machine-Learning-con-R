@@ -1,0 +1,323 @@
+---
+title: "Validación cruzada"
+author: "Rubén Pizarro Gurrola"
+date: "8/4/2022"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+bibliography: referencias.bib
+---
+
+# Objetivo
+
+Realizar validación cruzada
+
+# Descripción
+
+Con datos de pulsar_star obtenidos de la dirección <https://raw.githubusercontent.com/alexandrehsd/Predicting-Pulsar-Stars/master/pulsar_stars.csv> elaborar validación cruzada.
+
+El documento fuente es de: [@delgado2018].
+
+Los datos también se encuentran en : <https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/pulsar_stars.csv>
+
+# Fundamnto teórico
+
+La *Validación Cruzada* o *k-fold Cross Validation* consiste en tomar los datos originales y crear a partir de ellos dos conjuntos separados: un primer conjunto de entrenamiento (y prueba), y un segundo conjunto de validación.
+
+Luego, el conjunto de entrenamiento se va a dividir en *k* subconjuntos y, al momento de realizar el entrenamiento, se va a tomar cada *k* subconjunto como conjunto de *prueba* del modelo, mientras que el resto de los datos se tomará como conjunto de *entrenamiento*.
+
+Este proceso se repetirá *k* veces, y en cada iteración se seleccionará un conjunto de *prueba* diferente, mientras los datos restantes se emplearán, como se mencionó, como conjunto de *entrenamiento*. Una vez finalizadas las iteraciones, se calcula la precisión y el error para cada uno de los modelos producidos, y para obtener la precisión y el error final se calcula el promedio de los *k* modelos entrenados.
+
+Una vez se cuenta con esta precisión promedio para un modelo, se puede repetir entonces el procedimiento del *Cross Validation* para todos los demás modelos de clasificación que se estén evaluando, y se seleccionará al final aquel que produzca el mejor valor de precisión y menor error promedio.
+
+Entonces, puede utilizarse dicho modelo sobre el conjunto de validación generado en la primera parte, ya que, se supone, es este modelo el que mejor resultado en general ofreció durante la fase de entrenamiento.
+
+[@delgado2018a]
+
+# Desarrollo
+
+## Librerías
+
+```{r message=FALSE, warning=FALSE}
+library(readr)
+library(caTools) # Funciones estadísticas. sample.split()
+library(knitr) # Tablas amigables
+library(caret) # Partir datos 
+library(dplyr) # Para filter, select, mutate, %>% pipes, group_by, summarize
+
+
+# Librerías para cada algoritmo
+library(class)        # Para KNN Vecinos mas cercanos
+library(e1071)        # Vectores de Soporte SVM
+library(rpart)        # Arboles de clasificación
+library(randomForest) # Bosques aleatorios
+
+```
+
+## Datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/pulsar_stars.csv")
+
+```
+
+### Descripción de los datos
+
+```{r}
+str(datos)
+summary(datos)
+
+```
+
+Como se va a evaluar modelos de clasificación se identifica la variable clasificatoria (variable objetivo o dependiente o de salida o la etiqueta) que *target_class* del conjunto de datos.
+
+## Transformar datos
+
+### Modificar variable clasificatoria
+
+Se define la variable dependiente *target_class* como una variable categórica de nombre TipoEstrella con valores de *Pulsar* y *NoPulsar*.
+
+```{r}
+colnames(datos)[9] <- "TipoEstrella"
+datos$TipoEstrella <- factor(datos$TipoEstrella, levels = c("0", "1"), labels = c("NoPulsar", "Pulsar"))
+
+
+```
+
+### Reescalar los valores de las variables independientes.
+
+Se escalan los valores numéricos de los datos con la función *scale()* que implica centrar valores numéricos por default.
+
+Por definición se utiliza la siguiente fórmula para escalar datos numéricos:
+
+$$ 
+x.escalada = \frac{x-min(x)}{max(x)-min(x)}
+$$
+
+```{r}
+# Reescalar
+datos[, c(1:8)] <- scale(x = datos[, c(1:8)])
+
+```
+
+## Descripción nueva de los datos
+
+Nuevamente se describen los datos
+
+```{r}
+
+summary(datos)
+```
+
+## Crear datos de entrenamiento y validación
+
+### Datos de entrenamiento
+
+Se toma 70% para datos de entrenamiento y 30% para datos de validación. Se utiliza la función *sample.split()* de la librería *caTools.*
+
+```{r}
+set.seed(2022) # Año actual 
+divide <- sample.split(datos$TipoEstrella, SplitRatio = 0.70)
+datos_entrenamiento <- subset(datos, divide == TRUE)
+
+kable(head(datos_entrenamiento, 20), caption="Datos de Entrenamiento primeros 20")
+
+
+```
+
+### Datos de validación
+
+```{r}
+datos_validacion <- subset(datos, divide == FALSE)
+kable(head(datos_validacion, 20), caption="Datos de Validación primeros 20")
+
+```
+
+Se observa por ejemplo que el registro 1 está en los datos de validación y no en los datos de entrenamiento y que los registros del 2 al 9 están en los datos de entrenamiento y no en los datos de validación.
+
+Con la función *table()* se obtienen la cantidad de observaciones que son del tipo Pulsar y No Pulsar de acuerdo a la variable TipoEtrella, tanto en los datos de entrenamiento como en los datos de validación.
+
+Se observa también la partición de los datos en 70% y 30% de manera respectiva para cada conjunto o partición de datos.
+
+```{r}
+table(datos_entrenamiento$TipoEstrella)
+table(datos_validacion$TipoEstrella)
+
+```
+
+## Implementación del Cross Validation para los Modelos de Clasificación
+
+Se va a evaluar los algoritmos de clasificación mediante la técnica de validación cruzada con los datos de entrenamiento.
+
+Se debe obtener una medida de eficiencia (*accuracy*) conforme matriz de confusión para concluir en cual modelo es mejor para clasificar el Tipo de Estrella como variable resultado.
+
+Participan varios algoritmos :
+
+-   Regresión Logística
+-   k-NN
+-   Kernel-SVM
+-   Naive Bayes
+-   Decision Tree
+-   Random Forests
+
+Se utilizan funciones previamente codificadas que devuelven o retornan el valor de la eficiencia ("Accuracy") para cada algoritmo.
+
+Varios subconjuntos de los datos de entrenamiento usando la función *createFolds()* de la librería *caret*.
+
+Se crean 10 subcojuntos con los registros aleatoriamente seleccionados de los datos de entrenamiento.
+
+Estos números de registros de envían a las funciones correspondientes que devuelven la métrica de *Accuracy = Eficiencia* conforme a matriz de confusión.
+
+```{r}
+
+registros <- createFolds(y = datos_entrenamiento$TipoEstrella, k = 10)
+
+```
+
+### Mostrar registros
+
+Se muestran los primeros 20 registros de cada conjunto de datos, llamando a funciones preparadas previamente codificadas
+
+Llamar las funciones
+
+```{r}
+
+# source("../funciones/funciones para validacion cruzada.r")
+
+source("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/funciones/funciones%20para%20validacion%20cruzada.R")
+```
+
+Mostrar cuales registros para cada conjunto
+
+```{r}
+tabla <- f_convertir_list_adf(registros)
+kable(head(tabla, 20), caption = "Registros de cada subconjunto. Los primeros 20")
+```
+
+### Regresión logística
+
+```{r}
+Accu.RL <- f_RegresionLogistica(registros, datos_entrenamiento)
+paste("Accuracy = ", Accu.RL)
+```
+
+### KNN Vecinos mas cercanos
+
+```{r message=FALSE, warning=FALSE}
+Accu.KNN <- f.KNN(registros, datos_entrenamiento)
+paste("Accuracy = ", Accu.KNN)
+```
+
+### SVM Support Vector Machine
+
+```{r message=FALSE, warning=FALSE}
+Accu.SVM <- f_SVM(registros, datos_entrenamiento)
+paste("Accuracy = ", Accu.SVM)
+```
+
+### Redes Bayesianas Naive Bayes
+
+```{r}
+Accu.NV <- f_NV(registros, datos_entrenamiento)
+paste("Accuracy = ", Accu.NV)
+```
+
+### Arboles de Clasificación
+
+```{r message=FALSE, warning=FALSE}
+Accu.AC <- f_AC(registros, datos_entrenamiento)
+paste("Accuracy = ", Accu.AC)
+```
+
+### Random Forests. Bosques aleatorios
+
+```{r message=FALSE, warning=FALSE}
+Accu.RF <- f_RF(registros, datos_entrenamiento)
+paste("Accuracy = ", Accu.RF)
+```
+
+## Eficiencia (Accuracy) de todos los algoritmos
+
+Se presenta una tabla de la eficiencia de cada algoritmo usando la técnica de validación cruzada, es decir antes de probar con datos de validación y determinar la eficiencia con estos datos, se determina anticipadamente cual algoritmo resulta más eficiente para estos datos.
+
+```{r}
+algoritmos <- c("RL Regresión Logística", "KNN. Vecinos mas cercanos", "SVM Máquinas de Soporte Vectorial", "RB Redes Bayesianas", "AC Arboles de Clasificación", "RF Bosques Aleatorios")
+
+Acc <- data.frame(Algoritmos = algoritmos, Eficiencia = c(Accu.RL, Accu.KNN, Accu.SVM, Accu.NV, Accu.AC, Accu.RF))
+
+kable(Acc, caption = "Eficiencia de cada algoritmo con estos datos Usando validación cruzada")
+
+```
+
+Se observa que para estos datos el algoritmo de clasificación con mayor eficiencia sería en el regresín logística, seguido del algoritmo de random forest.
+
+Ahora hay que determinar la eficiencia con los datos de entrenamiento y datos de validación con el algoritmo de regresión logística y evaluar la similitud de la eficicnaia con la validación cruzada, es decir antes y después.
+
+### Crear modelo de Regresión Logística
+
+```{r}
+modelo <- glm(data = datos_entrenamiento, 
+              formula = TipoEstrella ~ ., family = binomial)
+summary(modelo)
+```
+
+### Predicciones con datos de validación
+
+```{r}
+predicciones <- predict(object = modelo, newdata = datos_validacion, type = 'response')
+
+
+```
+
+### Crear tabla comparativa
+
+```{r}
+tabla.comparar <- data.frame(real = datos_validacion$TipoEstrella, predicciones)
+
+tabla.comparar <- tabla.comparar %>%
+  mutate(Pred = if_else(predicciones > 0.5, 1, 0))
+
+tabla.comparar <- tabla.comparar %>%
+  mutate(TipoEstrellaPred = if_else(Pred == 0, "NoPulsar", "Pulsar"))
+
+
+kable(head(tabla.comparar, 20), caption = "Primeros 20 registros de tabla comparativa")
+```
+
+### Creando la matriz de confusión
+
+Se utiliza *confusionMatrix* de la librería *caret*
+
+Se factorizan los valores
+
+```{r}
+tabla.comparar$real <- as.factor(tabla.comparar$real)
+tabla.comparar$TipoEstrellaPred <- as.factor(tabla.comparar$TipoEstrellaPred)
+```
+
+```{r}
+matriz <- confusionMatrix(tabla.comparar$real, tabla.comparar$TipoEstrellaPred)
+
+
+matriz$overall[1]
+
+```
+
+El valor de eficiencia igual a `r matriz$overall[1]` es similar al valor de eficiencia con valor de `r Accu.AC` de la validación cruzada.
+
+# Interpretación
+
+Se desarrolla la técnica de validación cruzada para evaluar la métrica de *Accuracy* por medio de la matriz de confusión con varios algoritmos de clasificación.
+
+Con estos datos al 70% para datos de entrenamiento y 30% para datos de validación el algoritmo que sale mas eficiente es el de regresión logística.
+
+Los datos de *Accuracy* eficiencia son similares con validación cruzada y con las predicciones sobre los datos de validación.
+
+Al probar este documento con una partición del 80% para datos de entrenamiento y 20% para datos de validación se generan los resultados siguientes mediante técnica de validación cruzada. Identificando el mejor algoritmo el de bosques aleatorios seguido de Regresión Lógística
+
+RL Regresión Logística 0.9796761 KNN. Vecinos mas cercanos 0.9780691 SVM Máquinas de Soporte Vectorial 0.9789076 RB Redes Bayesianas 0.9464307 AC Arboles de Clasificación 0.9781393 RF Bosques Aleatorios 0.9800251
+
+# Bibliografía
