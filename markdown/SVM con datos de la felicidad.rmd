@@ -1,0 +1,489 @@
+---
+title: "SVM con datos de la felicidad"
+author: "Rubén Pizarro Gurrola"
+date: "8/4/2022"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+bibliography: referencias.bib
+---
+
+# Objetivo
+
+Contruir un modelo de clasificación basado en el algoritmo de máquinas de soporte vectorial (SVM) con distintos tipos de kernel.
+
+Los kernel pueden ser lineal radial polinomial, entre otros.
+
+# Descripción
+
+Se cargan las librerías necesarias para contr,ir el modelo de Máquinas de soprte vectorial (SVM) Cargar los datos <https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/estado%20de%20felicidad%20variables.csv>
+
+Se eva
+
+# Fundamento teórico
+
+Documento basado en [@pizarro_support_2020]
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(knitr) # Para ver tablas mas amigables en formato html markdown
+library(ggplot2) # Gráficas
+
+library(dplyr) # Varias operaciones 
+
+library(caret) # Para particionar datos. De entranamiento y de validación
+
+#install.packages("e1071") # Para SVM
+library(e1071)
+
+```
+
+## Cargar los datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/estado%20de%20felicidad%20variables.csv", stringsAsFactors = TRUE)
+
+```
+
+### Explorar datos
+
+```{r}
+str(datos)
+summary(datos)
+```
+
+#### head()
+
+```{r}
+kable(head(datos, 10), caption = "Primeros 10")
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos, 10), caption = "Ultimos 10")
+```
+
+### Transformar/Limpiar datos
+
+Como parte de preparar los datos habrá que transformar la variable estado:
+
+La variable de interés es FELIZ o NO FELIZ \* FELIZ = 1 \* NO FELIZ = 0
+
+```{r}
+datos <- datos %>%
+  mutate(estado.01 = if_else(estado == "FELIZ", 1, 0))
+
+```
+
+genero \* MASCULINO: 1 \* FEMENINO: 2
+
+```{r}
+datos <- datos %>%
+  mutate(genero.12 = if_else(genero == "MASCULINO", 1, 2), )
+
+```
+
+edo_civil
+
+-   SOLTERO: 1
+
+-   CASADO: 2
+
+-   DIVORCIADO: 3
+
+-   VIUDO: 4
+
+```{r}
+datos <- datos %>%
+  mutate(esto.civil.14 = ifelse(esto.civil == "SOLTERO", 1, ifelse(esto.civil == "CASADO", 2, ifelse(esto.civil == "DIVORCIADO", 3, 4))))
+
+```
+
+edo_civil
+
+-   BUENO: 1
+
+-   MALO: 2
+
+-   REGULAR 3
+
+```{r}
+datos <- datos %>%
+  mutate(salud.13 = ifelse(salud == "BUENO", 1, ifelse(salud == "MALO", 2, 3)))
+
+```
+
+El haber transformado los datos a valores numéricos ayuda en algunos modelos que requieren datos numéricos, sin embargo para el modelo de SVM se pueden dejar los valores de los atributos simplemente indicando que son de tipo factor.
+
+Se puede transformar a factor al momento de leer los datos csv con el argumento la *stringsAsFactors = TRUE* o se puede factorizar o categorizar mediante las funciones *as.factor()* o *factor().*
+
+## Particionar los datos
+
+Partir los datos con una semilla de 2022 con el 70% para dAtos de entrenamiento y el 30% para datos de validación.
+
+### Sembrar semilla
+
+```{r}
+set.seed(2022)
+```
+
+### Datos de entrenamiento
+
+```{r}
+n <- nrow(datos)
+
+entrena <- createDataPartition(y = datos$estado, p = 0.70, list = FALSE, times = 1)
+
+entrena
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+kable(datos.entrenamiento, caption = "Datos de entrenamiento")
+```
+
+### Datos de validación
+
+```{r}
+# Datos validación
+datos.validacion <- datos[-entrena, ] # Los que no son de entrenamiento
+kable(datos.validacion, caption = "Datos de validación")
+```
+
+## Modelo SVM Lineal
+
+### Estimar el mejor costo para el modelo
+
+El costo tiene que ver con la flexibilidad de los vectores de soporte, esto significa que tan bien clasifica el modelo.
+
+La expresión estado \~ . significa que la variable estado está e función o depende de todas (.) las variables. Algo similar a esto: genero + esto.civil + edad + .... dinero.
+
+La variable ajuste.costo identifica el mejor costo para la construcción del modelo como parámetro.
+
+```{r}
+## set.seed(2022)
+ajuste.costo <- tune(svm, estado ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, data = datos.entrenamiento, 
+               kernel = "linear", 
+               ranges = list(cost = seq(from= 0.01, to=1, by = 0.04)), 
+               scale = TRUE)
+
+summary(ajuste.costo)
+
+
+```
+
+#### Mejor costo
+
+Con la función filter de la librería dplyr se filtra el mejor costo
+
+```{r}
+mejor.costo <- filter(ajuste.costo$performances, error == min(ajuste.costo$performances$error))
+mejor.costo <- min(mejor.costo$cost)
+mejor.costo
+```
+
+#### Graficando el mejor costo
+
+```{r}
+ggplot(data = ajuste.costo$performances, aes(x = cost, y = error)) +
+  # geom_line() +
+  geom_point(col='red') +
+  labs(title = "Error de validación ~ hiperparámetro C") +
+  # theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Construir un modelo SVM lineal
+
+```{r}
+modelo.svm.lineal <- svm(estado ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, data = datos.entrenamiento, kernel = "linear", cost = mejor.costo, scale = TRUE)
+
+summary(modelo.svm.lineal)
+```
+
+### Hacer predicciones
+
+Las predicciones se hacen con los datos de validación
+
+```{r}
+predicciones <- predict(object = modelo.svm.lineal, datos.validacion )
+
+predicciones
+```
+
+### Evaluar el modelo
+
+El modelo se evalúa utilizando la matriz de confusión con la métrica accuracy = exactitud.
+
+Crear tabla comparativa y convertir a tipo factor las predicciones. La tabla comparativa solo extrae de las columnas de interés que son las columnas del 1 al 10 y la de predicciones 15.
+
+```{r}
+tabla.comparativa <- data.frame(datos.validacion, predicciones)
+kable(tabla.comparativa[c(1:10, 15),], caption = "Tabla comparativa")
+
+
+```
+
+Convertir a tipo factor
+
+```{r}
+tabla.comparativa$predicciones <- as.factor(tabla.comparativa$predicciones)
+```
+
+```{r}
+matriz <- confusionMatrix(tabla.comparativa$estado, tabla.comparativa$predicciones)
+matriz
+```
+
+El modelo tiene un valor de accuracy o exactitud aproximadamente del 73% comparado con el algoritmo de regresión logística que fue de un 70% y comparado con el algoritmo de árbol de clasificación que tuvo un valor del 80% este algoritmo de SVM está por encima de uno de ellos en esta métrica.
+
+Este algoritmo resulta ser más eficiente en las predicciones.
+
+### Predicciones con datos nuevos
+
+```{r}
+genero = factor('MASCULINO', levels = c("MASCULINO", "FEMENINO"))
+esto.civil = factor('SOLTERO', levels = c( "SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"))
+edad = 39
+satisfaccion.laboral <- 90
+satisfaccion.profesional <- 90
+vida.familiar <- 80
+vida.social <- 90
+salud <- factor('REGULAR', levels = c('BUENO', 'MALO', 'REGULAR'))
+dinero <- 70
+
+
+datos.nuevos <- data.frame(genero, esto.civil, edad, satisfaccion.laboral, satisfaccion.profesional, vida.familiar, vida.social, salud, dinero)
+datos.nuevos
+
+PREDICCION <- predict(object = modelo.svm.lineal, datos.nuevos)
+PREDICCION
+```
+
+------------------------------------------------------------------------
+
+## Modelo SVM polinomial
+
+### Estimar el mejor costo para el modelo
+
+El costo tiene que ver con la flexibilidad de los vectores de soporte, esto significa que tan bien clasifica el modelo.
+
+La expresión estado ~ . significa que la variable estado está en función o depende de todas (.) las variables. Algo similar a esto: genero + esto.civil + edad + .... dinero.
+
+La variable ajuste.costo identifica el mejor costo para la construcción del modelo como parámetro.
+
+```{r}
+## set.seed(2022)
+ajuste.costo <- tune(svm, estado ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, data = datos.entrenamiento, 
+               kernel = "polynomial", 
+               ranges = list(cost = seq(from= 0.01, to=1, by = 0.04)), 
+               scale = TRUE)
+
+summary(ajuste.costo)
+
+
+```
+
+#### Mejor costo
+
+Con la función filter de la librería dplyr se filtra el mejor costo
+
+```{r}
+mejor.costo <- filter(ajuste.costo$performances, error == min(ajuste.costo$performances$error))
+mejor.costo <- min(mejor.costo$cost)
+mejor.costo
+```
+
+#### Graficando el mejor costo
+
+```{r}
+ggplot(data = ajuste.costo$performances, aes(x = cost, y = error)) +
+  # geom_line() +
+  geom_point(col='red') +
+  labs(title = "Error de validación ~ hiperparámetro C") +
+  # theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Construir un modelo SVM lineal
+
+```{r}
+modelo.svm.poly <- svm(estado ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, data = datos.entrenamiento, kernel = "polynomial", cost = mejor.costo, scale = TRUE)
+
+summary(modelo.svm.poly)
+```
+
+### Hacer predicciones
+
+Las predicciones se hacen con los datos de validación
+
+```{r}
+predicciones <- predict(object = modelo.svm.poly, datos.validacion )
+
+predicciones
+```
+
+### Evaluar el modelo
+
+El modelo se evalúa utilizando la matriz de confusión con la métrica accuracy = exctitud.
+
+Crear tabla comparativa y convertir a tipo factor las predicciones
+
+```{r}
+tabla.comparativa <- data.frame(datos.validacion, predicciones)
+kable(tabla.comparativa[c(1:10, 15),], caption = "Tabla comparativa")
+
+
+```
+
+Convertir a tipo factor
+
+```{r}
+tabla.comparativa$predicciones <- as.factor(tabla.comparativa$predicciones)
+```
+
+```{r}
+matriz <- confusionMatrix(tabla.comparativa$estado, tabla.comparativa$predicciones)
+matriz
+```
+
+El modelo SVM Polinomial tiene un valor de accuracy o exactitud aproximadamente del 60% comparado con otros modelos de clasificación incluyendo el SVM lineal es menor.
+
+### Predicciones con datos nuevos
+
+```{r}
+genero = factor('MASCULINO', levels = c("MASCULINO", "FEMENINO"))
+esto.civil = factor('SOLTERO', levels = c( "SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"))
+edad = 39
+satisfaccion.laboral <- 90
+satisfaccion.profesional <- 90
+vida.familiar <- 80
+vida.social <- 90
+salud <- factor('REGULAR', levels = c('BUENO', 'MALO', 'REGULAR'))
+dinero <- 70
+
+
+datos.nuevos <- data.frame(genero, esto.civil, edad, satisfaccion.laboral, satisfaccion.profesional, vida.familiar, vida.social, salud, dinero)
+datos.nuevos
+
+PREDICCION <- predict(object = modelo.svm.poly, datos.nuevos)
+PREDICCION
+```
+
+------------------------------------------------------------------------
+
+## SVM Radial
+
+### Estimar el mejor costo para el modelo
+
+El costo tiene que ver con la flexibilidad de los vectores de soporte, esto significa que tan bien clasifica el modelo.
+
+La expresión estado \~ . significa que la variable estado está e función o depende de todas (.) las variables. Algo similar a esto: genero + esto.civil + edad + .... dinero.
+
+La variable ajuste.costo identifica el mejor costo para la construcción del modelo como parámetro.
+
+```{r}
+## set.seed(2022)
+ajuste.costo <- tune(svm, estado ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, data = datos.entrenamiento, 
+               kernel = "radial", 
+               ranges = list(cost = seq(from= 0.01, to=1, by = 0.04)), 
+               scale = TRUE)
+
+summary(ajuste.costo)
+
+
+```
+
+#### Mejor costo
+
+Con la función *filter()* de la librería *dplyr* se filtra el mejor costo
+
+```{r}
+mejor.costo <- filter(ajuste.costo$performances, error == min(ajuste.costo$performances$error))
+mejor.costo <- min(mejor.costo$cost)
+mejor.costo
+```
+
+#### Graficando el mejor costo
+
+```{r}
+ggplot(data = ajuste.costo$performances, aes(x = cost, y = error)) +
+  # geom_line() +
+  geom_point(col='red') +
+  labs(title = "Error de validación ~ hiperparámetro C") +
+  # theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Construir un modelo SVM lineal
+
+```{r}
+modelo.svm.radial <- svm(estado ~ genero + esto.civil + edad + satisfaccion.laboral + satisfaccion.profesional + vida.familiar + vida.social + salud + dinero, data = datos.entrenamiento, kernel = "radial", cost = mejor.costo, scale = TRUE)
+
+summary(modelo.svm.radial)
+```
+
+### Hacer predicciones
+
+Las predicciones se hacen con los datos de validación
+
+```{r}
+predicciones <- predict(object = modelo.svm.radial, datos.validacion )
+
+predicciones
+```
+
+### Evaluar el modelo
+
+El modelo se evalúa utilizando la matriz de confusión con la métrica accuracy = exactitud.
+
+Crear tabla comparativa y convertir a tipo factor las predicciones
+
+```{r}
+tabla.comparativa <- data.frame(datos.validacion, predicciones)
+kable(tabla.comparativa[c(1:10, 15),], caption = "Tabla comparativa")
+
+
+```
+
+Convertir a tipo factor
+
+```{r}
+tabla.comparativa$predicciones <- as.factor(tabla.comparativa$predicciones)
+```
+
+```{r}
+matriz <- confusionMatrix(tabla.comparativa$estado, tabla.comparativa$predicciones)
+matriz
+```
+
+El modelo SVM Radial tiene un valor de *accuracy* o exactitud aproximadamente del 86% comparado con otros modelos de clasificación incluyendo otros SVM lineal es mucho mejor.
+
+### Predicciones con datos nuevos
+
+```{r}
+genero = factor('MASCULINO', levels = c("MASCULINO", "FEMENINO"))
+esto.civil = factor('SOLTERO', levels = c( "SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"))
+edad = 39
+satisfaccion.laboral <- 90
+satisfaccion.profesional <- 90
+vida.familiar <- 80
+vida.social <- 90
+salud <- factor('REGULAR', levels = c('BUENO', 'MALO', 'REGULAR'))
+dinero <- 70
+
+
+datos.nuevos <- data.frame(genero, esto.civil, edad, satisfaccion.laboral, satisfaccion.profesional, vida.familiar, vida.social, salud, dinero)
+datos.nuevos
+
+PREDICCION <- predict(object = modelo.svm.poly, datos.nuevos)
+PREDICCION
+```
+
+# Bibliografía
