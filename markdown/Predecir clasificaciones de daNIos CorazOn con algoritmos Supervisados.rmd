@@ -72,7 +72,12 @@ summary(datos)
 
 ## Limpiar datos
 
-Pendiente ....
+Crear variable llamada *HeartDisease01* que se utilizará en el modelo de regresión Logística tendrá valores o de para no daño y 1 para daño.
+
+```{r}
+datos = mutate (datos,HeartDisease_01=if_else(HeartDisease=='Yes',1,0))
+
+```
 
 ## Las variables de interés
 
@@ -102,7 +107,58 @@ datos.validacion <- datos[-entrena, ]
 
 ### Regresión logística
 
-Pendiente
+```{r}
+modelo.rl = glm(data = datos.entrenamiento,formula =    HeartDisease_01 ~ BMI+Smoking+AlcoholDrinking+Stroke+PhysicalHealth+MentalHealth+DiffWalking+Sex
++AgeCategory+Race+Diabetic+PhysicalActivity+GenHealth+SleepTime+Asthma+KidneyDisease+SkinCancer, family = "binomial")
+
+summary(modelo.rl)
+
+```
+
+#### Generar predicciones del modelo ...
+
+Predicciones con datos de validación
+```{r}
+
+prediciones_rl = predict(object = modelo.rl,newdata = datos.validacion, se.fit = TRUE)
+# convertir a valores probabilisticos 
+# Mediante la función logit se transforman los a probabilidades.
+prediciones_rl_prob <- exp(prediciones_rl$fit) / (1 + exp(prediciones_rl$fit))
+
+
+t_comparativa = data.frame(datos.validacion,prediciones_rl_prob)
+
+t_comparativa <- t_comparativa %>%
+  mutate(heartDiseasePred = if_else(prediciones_rl_prob < 0.50, 0, 1))
+
+top20 = head(t_comparativa,20)
+kable(top20,caption = 'Primeros 20 registros')
+
+
+
+```
+#### Matriz de confusion
+factorizar las columnas  "prediciones_rl_prob" & "heasrtDiseasePred" de la tabla comparativa 
+
+Factorizar en R  ==> categorizar con la funcion "as.factor" o "factor"
+
+```{r}
+
+t_comparativa$HeartDisease_01 = as.factor(t_comparativa$HeartDisease_01)
+t_comparativa$heartDiseasePred = as.factor(t_comparativa$heartDiseasePred)
+
+
+```
+
+Creacion de la matriz de confusion 
+
+```{r}
+
+matrixConfusion <- confusionMatrix(t_comparativa$HeartDisease_01,t_comparativa$heartDiseasePred)
+matrixConfusion
+
+
+```
 
 ### Arbol de clasificación
 
