@@ -39,7 +39,11 @@ Los modelo se aceptan si tienen un valor de exactitud por encima del 70%..
 
 ## Cargar librerías
 
-```{r message=FALSE, warning=FALSE}
+```{r}
+#install.packages("readr")
+#install.packages("caret")
+#install.packages("rpart.plot")
+
 library(readr)
 library(dplyr)
 library(caret)
@@ -56,9 +60,7 @@ library(rpart)        # Arboles de clasificación
 Cargar datos de manera local.
 
 ```{r}
-
-# datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/heart_2020_cleaned.csv")
-datos <- read.csv("../datos/heart_2020_cleaned.csv", encoding = "UTF-8", stringsAsFactors = TRUE)
+datos <- read.csv("../datos/heart_2020_cleaned.csv")
 
 ```
 
@@ -71,8 +73,12 @@ summary(datos)
 ```
 
 ## Limpiar datos
+```{r}
+datos = mutate (datos,HeartDisease_01=if_else(HeartDisease=='Yes',1,0))
 
-Pendiente ....
+```
+
+
 
 ## Las variables de interés
 
@@ -99,14 +105,62 @@ datos.validacion <- datos[-entrena, ]
 ```
 
 ## Modelos a construir
-
 ### Regresión logística
+```{r}
+ modelo.rl = glm(data = datos.entrenamiento,formula =    HeartDisease_01 ~ BMI+Smoking+AlcoholDrinking+Stroke+PhysicalHealth+MentalHealth+DiffWalking+Sex
++AgeCategory+Race+Diabetic+PhysicalActivity+GenHealth+SleepTime+Asthma+KidneyDisease+SkinCancer, family = "binomial")
 
-Pendiente
+summary(modelo.rl)
+
+
+```
+#### Generar predicciones del modelo ...
+
+Predicciones con datos de validación
+```{r}
+
+prediciones_rl = predict(object = modelo.rl,newdata = datos.validacion, se.fit = TRUE)
+# convertir a valores probabilisticos 
+# Mediante la función logit se transforman los a probabilidades.
+prediciones_rl_prob <- exp(prediciones_rl$fit) / (1 + exp(prediciones_rl$fit))
+
+
+t_comparativa = data.frame(datos.validacion,prediciones_rl_prob)
+
+t_comparativa <- t_comparativa %>%
+  mutate(heartDiseasePred = if_else(prediciones_rl_prob < 0.50, 0, 1))
+
+top20 = head(t_comparativa,20)
+kable(top20,caption = 'Primeros 20 registros')
+
+
+
+```
+#### Matriz de confusion
+factorizar las columnas  "prediciones_rl_prob" & "heasrtDiseasePred" de la tabla comparativa 
+
+Factorizar en R  ==> categorizar con la funcion "as.factor" o "factor"
+
+```{r}
+
+t_comparativa$HeartDisease_01 = as.factor(t_comparativa$HeartDisease_01)
+t_comparativa$heartDiseasePred = as.factor(t_comparativa$heartDiseasePred)
+
+
+```
+
+Creacion de la matriz de confusion 
+
+```{r}
+
+matrixConfusion <- confusionMatrix(t_comparativa$HeartDisease_01,t_comparativa$heartDiseasePred)
+matrixConfusion
+
+
+```
+
 
 ### Arbol de clasificación
-
-Pendiente
 
 ### Máquinas de Soporte Vectorial (SVM) lineal
 
@@ -114,38 +168,11 @@ Pendiente
 
 ### Máquinas de Soporte Vectorial (SVM) Radial
 
-### Generar predicciones del modelo ...
 
-Predicciones con datos de validación
 
-### Evaluar predicciones del modelo ...
+### Evaluar prediciones del modelo ...
 
 ### Predicciones con datos nuevos
-
-```{r}
-BMI <- 20
-Smoking <- 'Yes'
-AlcoholDrinking = 'Yes'
-Stroke <- 'No'
-PhysicalHealth <- 13
-MentalHealth = 22
-DiffWalking = 'Yes'
-Sex = 'Male'
-AgeCategory = '60-64'
-Race = 'Hispanic'
-Diabetic <- 'Yes'
-PhysicalActivity = "No"
-GenHealth = "Fair"
-SleepTime = 8
-Asthma = "No"
-KidneyDisease = "Yes"
-SkinCancer = 'No'
-
-persona <- data.frame(BMI,Smoking, AlcoholDrinking, Stroke, PhysicalHealth, MentalHealth, DiffWalking, Sex, AgeCategory, Race, Diabetic, PhysicalActivity, GenHealth, SleepTime, Asthma, KidneyDisease, SkinCancer)
-persona
-
-
-```
 
 # Interpretación
 
