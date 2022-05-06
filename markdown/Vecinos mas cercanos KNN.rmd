@@ -1,0 +1,247 @@
+---
+title: "Vecinos mas cercanos KNN. Frutas,  proteínas y vegetales"
+author: "Rubén Pizarro Gurrola"
+date: "06-05-2022"
+output: 
+  html_document:
+    code_folding: hide
+bibliography: bibliografia.bib
+---
+
+# Objetivo
+
+Construir modelos de aprendizaje supervisados para resolver tareas de clasificación mediante el algoritmo de vecinos más cercanos con distintos conjuntos de datos.
+
+# Descripción
+
+-   Inicialmente se cagan las librerías necesarias para ejecutar funciones relacionadas con el algoritmo supervisado de vecinos mas cercanos.
+
+-   Se cargan los datos necesarios, se simula con datos de características de Frutas, Proteínas y Vegetales.
+
+-   Se visualizan los puntos de cada ingrediente.
+
+-   Se construye el modelo a partir de todos los datos
+
+-   Se analiza y se interpreta el modelo.
+
+-   Se realizan clasificaciones con datos de validación o nuevos datos.
+
+-   Se evalúa la precisión del modelo con la matriz de confusión.
+
+## Fundamento teórico
+
+Los algoritmos de clasificación utilizan las variables independientes y sus valores o características y la relación que tienen con una variable dependiente que se define con una etiqueta.
+
+Estos algoritmos supervisados utilizan los datos de entrenamiento para crear un modelo que se aplica para clasificar conforme a la etiqueta establecida (variable dependiente) un conjunto de datos de validación o nuevos valores.
+
+En las tareas de clasificación, se aprende de la estructura de un conjunto de datos. Aprender las diferentes categorías se consigue utilizando un modelo. Este modelo ayuda a aproximar los identificadores de un grupo [@jones2019].
+
+Los clasificadores de vecinos más cercanos (KNN) se definen por su característica (variables independientes) de clasificar ejemplos o nuevos valores sin etiquetar asignándoles la clase de los ejemplos etiquetados más similares [@lantz2013].
+
+Para encontrar la cercanía entre dos puntos se utiliza el concepto de la distancia Euclidiana, que es un número positivo que indica la separación que tienen dos puntos en un espacio donde se cumplen los axiomas y teoremas de la geometría de Euclides [@pérez].
+
+![Figura 1. Distancia Euclidiana [\@pérez].](images/Distancia%20Eucladiana.jpg "Figura 1. Distancia Euclidiana")
+
+### Fórmula de la distancia Euclidiana
+
+#### Para dos dimensiones:
+
+$$
+dis.euc(p, q) = \sqrt{(p_1-q_1)^2 + (p_2-q_2)^2}
+$$
+
+-   Siendo $p$ y $q$ registros, ejemplos, instancias u observaciones a ser comparadas.
+
+-   El término característica de un conjunto de datos se refiere a variables independientes y el término variable resultado o etiqueta es la variable dependiente.
+
+-   El término de $p_1$ se refiere al valor de la primera característica del registro $p$ mientras que el término $q_1$ se refiere al valor de la primera característica del registro $q$.
+
+-   El término de $p_2$ se refiere al valor de la segunda característica del registro $p$ y el término $q_2$ se refiere al valor de la segunda característica del registro $q$.
+
+#### Para n dimensiones
+
+La fórmula para $n$ dimensiones involucra más de dos características.
+
+$$
+dis.euc(p, q) = \sqrt{(p_1-q_1)^2 + (p_2-q_2)^2 + ...  + (p_n-q_n)^2}
+$$
+
+Siendo $n$ el número de características o variable independientes.
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(class) # Funciones para clasificación
+library(caret) # Funciones para Clasificación y Regresión
+library(mlbench) # Funciones para Machine Learning
+library(e1071) # Estadísticas
+
+library(ggplot2) # Gráficas
+library(dplyr)   # Operaciones con datos
+library(knitr)   # Para tablas amigables
+
+```
+
+En este ejercicio se tiene por cada ingrediente variables que tienen en una escala de 0-10 un valor de tipo de dulzura y consistencia crujiente. El algoritmo determina o predice que tipo de comida si es fruta, que se distingue su contenido en proteína y vegetal [Fruta, Proteína, Vegetal].
+
+## Los datos
+
+```{r}
+ingrediente <- c('Manzana', 'Tocino', 'Plátano', 'Zanahoria', 'Apio', 'Queso', 'Nuez', 'Camarón', 'Pescado', 'Naranja', 'Pepino', 'Pera', 'Uva', 'Lechuga', 'Frijol', 'Maiz')
+crujiente <- c(8.5, 2.5, 6, 9.5, 5.4, 3, 5, 4, 3, 6, 6.6, 9.1, 2, 6, 3.4, 3.3)
+dulce <- c(9, 1, 6, 4, 2, 1, 1.2, 1.2, 2, 9, 5, 9.4, 10, 5, 1.2, 1.3)
+tipo.comida <- c('Fruta', 'Proteína', 'Fruta', 'Vegetal', 'Vegetal', 'Proteína', 'Proteína', 'Proteína', 'Proteína', 'Fruta', 'Vegetal', 'Fruta', 'Fruta', 'Vegetal', 'Proteína', 'Proteína')
+
+datos <- data.frame(ingrediente, crujiente, dulce, tipo.comida)
+kable(datos, caption = "Datos") 
+```
+
+### Visualizando datos
+
+```{r}
+ggplot(data = datos, mapping = aes(x = dulce, y = crujiente)) +
+  geom_point(aes(colour = factor(tipo.comida), shape = factor(tipo.comida)), size=4) 
+
+
+```
+
+¿Que sucede si llega un nuevo registro ?, por ejemplo un tomate con valor de $dulce = 6$ y $crujiente = 3$, ¿a que grupo o tipo de comida pertenece: Fruta, Proteína o Vegetal?
+
+### Distancia euclidiana
+
+Cálculo por medio de distancia euclidiana comparando el nuevo valor con todos los anteriores.
+
+Se utiliza un valor de $k$ vecinos que significa cuales son los más cercanos; si $k=1$ significa que sólo se toma al registro más cercano y con eso se toma la clasificación.
+
+Si $k=3$ se toman los tres ejemplos más cercanos y se vota y se toma la decisión de cual es mayoría.
+
+Si $k=5$ de la misma manera se define cuáles y cuántos son los más cercanos y se toma la mayoría para clasificar el nuevo ejemplo.
+
+```{r}
+ingrediente <- 'Tomate'
+crujiente <- 3
+dulce <- 6
+tipo.comida = '????????'
+
+nuevos.datos <- data.frame (ingrediente, crujiente, dulce, tipo.comida)
+
+kable(nuevos.datos, caption = "Nuevos datos o  ejemplo 'Tomate'") 
+
+```
+
+Obviamente el cerebro humado debe identificar que el tomate es un vegetal sin necesidad de ningún algoritmo, pero se va a simular un aprendizaje supervisado para resolver tarea de clasificación.
+
+### Visualizando el nuevo registro
+
+Con la siguiente gráfica se identifica el nuevo dato con un punto en color negro, se puede observar que este punto se encuentra tan cerca de los vegetales como de las frutas.
+
+¿A cuál grupo pertenece o se clasifica?
+
+```{r}
+ggplot(data = datos, mapping = aes(x = dulce, y = crujiente)) +
+  geom_point(aes(colour = factor(tipo.comida), shape = factor(tipo.comida)), size=4) +
+  geom_point(aes(x = nuevos.datos$dulce, y = nuevos.datos$crujiente, size = 4))
+
+```
+
+#### Aplicando fórmula para dos dimensiones
+
+¿Cuál será la distancia euclidiana entre las características del tomate y las demás características de los otros ingredientes?
+
+Hacer el valor de $k=1$ es decir, se elegirá el ejemplo más cercano y con ello se toma la decisión y se clasifica al nuevo registro.
+
+```{r}
+
+formula = paste("sqrt((",nuevos.datos$crujiente, "-",datos$crujiente,")^2","+","(",nuevos.datos$dulce,"-",datos$dulce,")^2)")
+               
+dist.euc = sqrt((nuevos.datos$crujiente-datos$crujiente)^2+(nuevos.datos$dulce-datos$dulce)^2)
+
+datos.dist <- cbind(datos, formula, dist.euc)
+kable(datos.dist, caption = "Distancia Euclidina 'Tomate' y resto ingredientes'")
+```
+
+#### Ordenando las distancias
+
+Ordenando los datos con las distancias de manera ascendente por el valor de la distancia euclidiana.
+
+```{r}
+datos.dist <- arrange(datos.dist, dist.euc)
+kable(datos.dist, caption = "Distancia Euclidina 'Tomate' y resto ingredientes', ordenado ascendentemente")
+```
+
+Para $k=1$ el más cercano es una fruta pero para $k=3$ la mayoría de los cercanos son vegetales; para $k=5$ hay empate entre frutas y vegetales; para $K=7$ hay empate en frutas y vegetales.
+
+La pregunta es: ¿cuál debe ser el valor de $k$?.
+
+Si se pone $k=N$ igual al total de registros, el modelo falla porque entones si hay mayoría (*overfitting*) de un tipo entonces ese siempre gana.
+
+Si se establece $K = 1$ entonces el modelo puede generar ruido y/o *outliers* que sean influyentes en el nuevo registro.
+
+La respuesta está dada de acuerdo a la cantidad de datos. Se recomienda la raíz cuadrada de la cantidad de datos; es decir para este caso si hay 16 registros la raíz es $4$.
+
+Y la otra pregunta es ¿si hay un empate por cuál se decide el algoritmo, tal vez por los primeros.
+
+### Solución mediante función knn
+
+Se aplica la función *knn()* de la librería o paquete *class* en donde se la pasan parámetros tales como los datos por lo cual se entrena el modelo y los datos de validación que en este caso es el nuevo dato o ejemplo del tomate, también se necesita el valor de $k$ y finalmente se le indica la variable con la etiqueta o la variable dependiente por la cual se clasifica.
+
+Los valores *datos[,c(2,3)* indican las características de crujiente y dulce.
+
+Los valores *nuevos.datos[,c(2,3)]* indican las características de crujiente y dulce del nuevo registro o del ejemplo nuevo.
+
+```{r}
+modelo <- knn(train = datos[,c(2,3)], test = nuevos.datos[,c(2,3)], k = 4, cl = datos[,4])
+
+modelo
+
+summary(modelo)
+
+```
+
+### Clasificar más de un nuevo dato
+
+¿Cuántos datos se pueden clasificar ?, probar con mas de un dato.
+
+```{r}
+ingrediente <- c('Granada', 'Almendra')
+crujiente <- c(5.5, 4.8)
+dulce <- c(7.4, 1.8)
+tipo.comida = c('???', '???')
+
+nuevos.datos <- data.frame (ingrediente, crujiente, dulce, tipo.comida)
+
+kable(nuevos.datos, caption = "Nuevos datos o  ejemplo 'Tomate'")
+
+```
+
+### Aplicando knn
+
+```{r}
+modelo <- knn(train = datos[,c(2,3)], test = nuevos.datos[,c(2,3)], k = 4, cl = datos[,4])
+
+modelo
+
+summary(modelo)
+
+paste("La ", nuevos.datos[1,1], " se clasifica como: ", modelo[1])
+paste("La ", nuevos.datos[2,1], " se clasifica como: ", modelo[2])
+
+```
+
+## Interpretación
+
+Para un nuevo registro con valores de crujiente = 3 y dulce = 6, haciendo las operaciones de la distancia euclidiana y por medio de la función *knn()* la clasificación de ese nuevo ingrediente es que debe ser un vegetal de entre las etiquetas frutas, vegetal o proteína.
+
+El ejercicio demuestra que mediante la fórmula de distancia euclidiana y por medio de la función *knn()* se clasifica con el mismo resultado.
+
+Al haber introducido más de un registro la función *knn* responde y genera de igual forma resultados determinando la etiqueta a la que le pertenecen los nuevos datos utilizando la historia de los datos, siendo éste un algoritmo supervisado que resuelve tareas de de clasificación.
+
+¿Cuál debe ser el mejor $k$?. Otra manera de ver cual es el mejor valor de $k$ es mediante datos de entrenamiento y validación a partir de los datos origen y mediante matrices de confusión evaluar la exactitud (*accuracy*) del modelo, es decir el porcentaje de aciertos con los datos de validación y elegir al mejor número de vecinos $k$ de entre varios de ellos.
+
+¿Qué sucede si hay más características?, se utiliza la fórmula de distancia euclidiana para $n$ o múltiples características.
+
+¿Qué sucede si hay muchos registros?, puede usar este algoritmo o utilizar otros algoritmos como árboles de clasificación o regresión logística o *random forest*, entre otros..
+
+# Referencias bibliográficas
