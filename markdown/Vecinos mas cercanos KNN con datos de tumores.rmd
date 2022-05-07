@@ -1,0 +1,192 @@
+---
+title: "Vecinos mas cercanos KNN con datos de tumores benignos y malignos"
+author: "Rubén Pizarro Gurrola"
+date: "06/05/2022"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+# Objetivo
+
+Construir y evaluar un modelo KNN para predecir si una persona tiene un tumor BENIGNO O MALIGNO.
+
+# Descripción
+
+Cargar librerías, datos y hacer lo necesario aplicando función knn de la llibrería class y la función train.knn de la librería kknn.
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(readr) # Leer datos
+library(kknn)  # KNN modelo
+library(dplyr) # Procesar filtrar
+library(forcats)   # para decodificar vars
+library(class)     # Para
+library(caret)     # Matriz de confusión entre otros
+library(reshape)   # Para modificar variables 
+library(knitr)     # Para tablas amigables
+
+```
+
+## Cargar los datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/wisc_bc_data.csv", encoding = "UTF-8")
+
+kable(head(datos, 20), caption = "Los datos. Primeros 20")
+
+```
+
+## Preparar los datos
+
+### Quitar columna Id
+
+Eliminar la columna Id y dejarlo en variable data.frame dat.p que significa datos preparados
+
+```{r}
+datos.p <- select(datos, diagnosis, radius_mean, texture_mean, perimeter_mean, area_mean, smoothness_mean, compactness_mean, concavity_mean,  points_mean, symmetry_mean, dimension_mean, radius_se,, texture_se, perimeter_se, area_se, smoothness_se, compactness_se, concavity_se, points_se, symmetry_se, dimension_se, radius_worst, texture_worst, perimeter_worst, area_worst, smoothness_worst, compactness_worst, concavity_worst, points_worst,  symmetry_worst, dimension_worst)
+
+
+# datos.pp <- datos[-1,] # Otra alnternativa
+```
+
+### Normalizar datos cuantitativos
+
+Por medio de una función se normalizan los datos numéricos para evitar datos muy grandes o muy pequeños y centralizar los valores.
+
+Se puede utilizar la función scale(), para escalar valores numéricos. Para este ejercicio se utiliza la función preparada normalizar.
+
+```{r}
+# Función para normalizar
+normalizar  <- function(x){
+  return ((x - min(x))/(max(x) - min(x)))
+}
+```
+
+### Normalizar datos.p
+
+```{r}
+datos.p[,2:31] <- normalizar(datos.p[, 2:31])
+
+```
+
+### Decodificar la variable diagnosis
+
+Cambiarle la variable diagnosis a diagnostico con valores B = Benigno y M Maligno.
+
+Cambiar el nombre del atributo diagnosis por diagnostico.
+
+```{r}
+datos.p = rename(datos.p, c(diagnosis="diagnostico"))
+
+```
+
+### Factorizar la variable diagnostico
+
+```{r}
+datos.p$diagnostico <- factor(datos.p$diagnostico)
+```
+
+## Construir datos de entrenamiento y datos de validación
+
+Por medio de sample() identifica el 70% de los registros de datos.p para datos de entrenamiento y el 30% restante (los que no son de entrenamiento) serán para datos de validación.
+
+S siembre una semilla para generar los mismos datos aleatorios.
+
+```{r}
+set.seed(2022)
+n <- nrow(datos.p)
+
+entrena <- sample(x = 1:n, size = round(n * 0.70), replace = FALSE)
+entrena
+
+
+```
+
+Datos de entrenamiento
+
+```{r}
+datos.entrenamiento <- datos.p[entrena, ]
+kable(head(datos.entrenamiento, 10), caption = "Datos de entrenamiento primeros 10")
+```
+
+Datos de validación
+
+```{r}
+datos.validacion <- datos.p[-entrena, ]
+kable(head(datos.validacion, 10), caption = "Datos de validación primeros 10")
+
+```
+
+## Construir un modelo KNN
+
+Construir el modelo bajo el algoritmo KNN en donde la variable diagnostico depende de todos las variables numéricas.
+
+```{r}
+modelo <- train.kknn(data = datos.entrenamiento, formula = diagnostico ~ ., kmax = 30)
+
+summary(modelo)
+```
+
+## Evaluar el modelo con los datos de validación
+
+```{r}
+predicciones <- predict(object = modelo, newdata = datos.validacion)
+
+
+```
+
+### Construir un data frame para comparar reales con predicciones
+
+Solo se observan los primeros 20 registros a comparar
+
+```{r}
+datos.comparar <- data.frame("real" = datos.validacion$diagnostico, "predicho" = predicciones)
+
+kable(head(datos.comparar, 20), caption = "Datos a comparar previo a matriz de confusión" )
+```
+
+### Construyendo matriz de confusion
+
+Con la función confussion el estadístico Accuracy = Exacitud.
+
+```{r}
+matriz <- confusionMatrix(datos.comparar$real, datos.comparar$predicho)
+
+matriz
+```
+
+## Mismo algoritmo pero con función knn
+
+Se utiliza la función knn de la librería class para estimar predicciones. Se utiliza la variable predicciones.2 para diferencias de predicciones.
+
+```{r}
+predicciones.2 <- knn(train = datos.entrenamiento[,2:31], test = datos.validacion[,2:31], cl = datos.entrenamiento$diagnostico, k = 12)
+
+```
+
+Determinando la matriz de confusion con predicciones.2
+
+```{r}
+matriz2 <- confusionMatrix(datos.validacion$diagnostico, predicciones.2)
+matriz2
+```
+
+## Interpretación
+
+El modelo KNN con la función train.kknn() arroja una exactitud del 94%, significa que el modelo acierta en 94 ocasiones de cada cien pacientes.
+
+El modelo KNN con la función knn() arroja una exactitud del 92%, significa que el modelo acierta en 92 ocasiones de cada cien pacientes.
+
+Siendo el mismo algoritmo las funciones mismas arrojan diferentes estadísticos. Esto supone el algoritmo es diferente en cada función que que cada una de ellas encapsula u propio código dependiendo del paquete y del autor.
+
+Se puede comparar contra otros modelos:
+
+-   Árbol de Clasificación su exactitud fue de: pendiente
+
+-   SVM su exactitud fue de: pendiente
+
+-   Regresión logística su exactitud fue de: pendiente
